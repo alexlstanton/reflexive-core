@@ -1,0 +1,101 @@
+# Superseded license files (canonical license is LICENSE)
+LICENSE-APACHE
+LICENSE-MIT
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# Environment Variables and Secrets — CRITICAL: never commit .env
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+*.key
+*.pem
+secrets.json
+.secrets.baseline
+
+# API Keys
+*api_key*
+*apikey*
+credentials.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+*.log
+
+# Data and Results (new timestamped runs are gitignored; named/archived runs are tracked)
+data/results/sweep_2026*.json
+data/results/sweep_2025*.json
+!data/results/.gitkeep
+!data/results/SWEEP_ANALYSIS_FEB2026.md
+!data/results/october-2025/
+!data/results/february-2026-v1.0/
+!data/results/sweep_sonnet*
+!data/results/sweep_opus*
+data/metrics/*
+!data/metrics/.gitkeep
+data/logs/*
+!data/logs/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Ruff
+.ruff_cache/

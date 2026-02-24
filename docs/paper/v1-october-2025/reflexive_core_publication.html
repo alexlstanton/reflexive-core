@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflexive-Core: Single-Context Metacognitive Security for Agentic LLMs</title>
+    <style>
+        /* Anthropic-inspired professional typography */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root {
+            --primary-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --mono-font: 'JetBrains Mono', 'Courier New', monospace;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --accent-color: #d97706;
+            --code-bg: #f5f5f5;
+            --border-color: #e5e5e5;
+            --max-width: 800px;
+            --line-height: 1.7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--primary-font);
+            font-size: 11pt;
+            line-height: var(--line-height);
+            color: var(--primary-color);
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 2cm;
+            background: white;
+        }
+        
+        /* Print styles for PDF export */
+        @media print {
+            body {
+                max-width: 100%;
+                padding: 1.5cm;
+                font-size: 10pt;
+            }
+            
+            h1 { page-break-before: always; }
+            h2, h3 { page-break-after: avoid; }
+            
+            pre, blockquote, table {
+                page-break-inside: avoid;
+            }
+            
+            .no-print { display: none; }
+        }
+        
+        /* Typography hierarchy */
+        h1 {
+            font-size: 28pt;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 2em 0 0.5em 0;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 0.3em;
+        }
+        
+        h1:first-of-type {
+            margin-top: 0;
+        }
+        
+        h2 {
+            font-size: 20pt;
+            font-weight: 600;
+            line-height: 1.3;
+            margin: 1.8em 0 0.6em 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.2em;
+        }
+        
+        h3 {
+            font-size: 14pt;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 1.5em 0 0.5em 0;
+            color: var(--primary-color);
+        }
+        
+        h4 {
+            font-size: 12pt;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 1.2em 0 0.4em 0;
+            color: var(--secondary-color);
+        }
+        
+        /* Paragraphs and spacing */
+        p {
+            margin: 0 0 1em 0;
+            text-align: justify;
+            hyphens: auto;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 0.8em 0 1em 1.5em;
+        }
+        
+        li {
+            margin: 0.4em 0;
+            padding-left: 0.3em;
+        }
+        
+        li p {
+            margin: 0.3em 0;
+        }
+        
+        /* Code and technical content */
+        code {
+            font-family: var(--mono-font);
+            font-size: 9.5pt;
+            background: var(--code-bg);
+            padding: 0.15em 0.3em;
+            border-radius: 3px;
+            color: #c7254e;
+        }
+        
+        pre {
+            font-family: var(--mono-font);
+            font-size: 9pt;
+            background: var(--code-bg);
+            padding: 1em;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color);
+            overflow-x: auto;
+            margin: 1em 0;
+            line-height: 1.5;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--primary-color);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 3px solid var(--accent-color);
+            padding: 0.5em 0 0.5em 1em;
+            margin: 1em 0;
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 10pt;
+        }
+        
+        th, td {
+            padding: 0.6em;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Special formatting */
+        .author-info {
+            text-align: left;
+            margin: 1.5em 0 2.5em 0;
+            color: var(--secondary-color);
+        }
+        
+        .author-info p {
+            margin: 0.3em 0;
+            text-align: left;
+        }
+        
+        .abstract {
+            background: #fafafa;
+            padding: 1.5em;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            margin: 2em 0;
+        }
+        
+        .abstract h2 {
+            margin-top: 0;
+            border: none;
+            padding: 0;
+        }
+        
+        .keywords {
+            margin-top: 1.5em;
+            font-size: 10pt;
+            color: var(--secondary-color);
+        }
+        
+        .keywords strong {
+            color: var(--primary-color);
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        em {
+            font-style: italic;
+        }
+        
+        /* Horizontal rule */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 2em 0;
+        }
+        
+        /* References */
+        .references ol {
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+        
+        .references li {
+            margin: 0.6em 0;
+        }
+        
+        /* Figure captions */
+        .figure-caption {
+            font-size: 9.5pt;
+            color: var(--secondary-color);
+            text-align: center;
+            margin: 0.5em 0 1.5em 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Reflexive-Core: Single-Context Metacognitive Security for Agentic LLMs</h1>
+
+<div class="author-info">
+    <p><strong>Alex Stanton</strong></p>
+    <p>Independent Researcher</p>
+    <p><a href="mailto:alex@thinkpurple.io">alex@thinkpurple.io</a></p>
+    <p><a href="https://linkedin.com/in/alexlstanton" target="_blank">https://linkedin.com/in/alexlstanton</a></p>
+    <p style="margin-top: 1em;"><strong>Date:</strong> October 2025</p>
+    <p><strong>Status:</strong> Research Prototype</p>
+</div>
+
+<hr>
+
+<div class="abstract">
+    <h2>Abstract</h2>
+    <p>This work presents Reflexive-Core, an evolutionary step on the A2AS (Agent-to-Agent Security, September 2025) concept that moves from passive security markup to structured in-context metacognitive reasoning. A2AS was developed to reduce or eliminate multi-pass verification overhead (commonly requiring multiple separate LLM calls, often 5 or more per request). A2AS provides <code>&lt;a2as:defense&gt;</code> and <code>&lt;a2as:policy&gt;</code> primitives that establish security boundaries before user context arrives, but without structured metacognitive reasoning, these remain passive annotations the model may inconsistently follow. Early implementations, such as Christian Posta's agentgateway concept, validate A2AS operational viability by enforcing wrapper structure and enabling deterministic output validation before results return to agents.</p>
+    
+    <p>Reflexive-Core explores this: <strong>leveraging the sophisticated security reasoning that every frontier LLM inherently possesses</strong> by structuring in-context inference into specialized sub-personas (Preflight Analyst, Security Analyst, Controlled Executor, Compliance Validator). Rather than relying on passive markup, each persona actively reasons about threats, policies, and risks within the context window, transforming A2AS from unstructured guidance into intelligent runtime security governance.</p>
+    
+    <p>This architecture is grounded in recent evidence for measurable metacognitive capabilities in frontier LLMs (r=0.2-0.3 confidence-behavior correlations, per Ackerman 2025), the cognitive synergy demonstrated by Solo Performance Prompting (+7.1% to +18.5% accuracy gains on GPT-4, Wang et al. 2023), and Constitutional AI's principle-based self-critique. Token overhead analysis shows 1.9× cost for small contexts (1K tokens) but scales to &lt;1.01× for realistic production contexts (50K+ tokens)—economically viable compared to both external enforcement overhead and multi-pass verification (2-3×).</p>
+    
+    <p>Reflexive-Core is positioned not as a replacement for external systems but as complementary evolution: deterministic brokers (agentgateway-style) handle wrapper enforcement and output validation while in-context personas provide contextual intelligence. This hybrid approach—external reliability plus internal reasoning—represents a possible future of A2AS implementation. This work contributes a working implementation specification and empirical token analysis, demonstrating that structured metacognitive reasoning can operationalize security intelligence that passive markup approaches leave untapped.</p>
+    
+    <p>Following vendor guidance (Anthropic, OpenAI, Google Vertex AI, Azure OpenAI), prompts are structured with XML-delimited sections; <strong>paired with schema-bound generation for each sub-persona</strong>, this yields well-formed, parseables consistent with recent XML-prompting theory and supports the hypothesis that XML-schema–scaffolded sub-personas <strong>improve metacognitive self-governance</strong> (higher parse validity and phase-order adherence).</p>
+    <div class="keywords">
+        <p><strong>Keywords:</strong> LLM Security, Reflexive Review, Metacognition, Sub-Personas, Agentic AI, A2AS, Prompt Injection Defense, Policy Enforcement, Constitutional AI, agentgateway</p>
+    </div>
+</div>
+
+<h2>1. Introduction</h2>
+
+<p>The rapid deployment of autonomous AI agents introduces unprecedented security challenges. Unlike traditional software with well-defined execution boundaries, large language model (LLM) agents operate through natural language reasoning, making them vulnerable to prompt injection attacks, role confusion, and unintended privilege escalation. Existing security approaches typically employ external verification loops requiring multiple separate LLM calls (often 5 or more per request, sometimes exceeding 15 in complex topologies), introducing latency, state management complexity, and expanded attack surfaces—or rely on hardened system prompts that prove brittle against sophisticated adversarial inputs.</p>
+
+<p>The A2AS (Agent-to-Agent Security) framework was developed specifically to address these limitations. A2AS provides structured primitives—<code>&lt;a2as:defense&gt;</code> for input validation, <code>&lt;a2as:policy&gt;</code> for declarative permissions, behavior certification—that enable <strong>single-context security reasoning</strong> without external dependencies. However, A2AS is a framework, not a full implementation. It defines the <em>what</em> (security boundaries, policy markup) but leaves the <em>how</em> (operationalizing these primitives) to developers.</p>
+
+<p><strong>Reflexive-Core operationalizes A2AS's vision</strong> by implementing the missing piece: <strong>metacognitive security reasoning through structured multi-persona analysis</strong>. Rather than treating A2AS markup as passive annotations and <em>hoping</em> the model will adhere, Reflexive-Core makes them <strong>active governance mechanisms</strong> executed within a single model inference. The framework partitions reasoning into specialized analytical phases—threat detection, policy enforcement, execution, and compliance validation—each with explicit checkpoints and fail-closed defaults, creating a self-governing security routine that requires no external verification loops.</p>
+
+<p><strong>XML-delimited</strong> sections to separate instructions, examples, and outputs, following vendor guidance across Anthropic, OpenAI, Google Vertex AI, and Azure OpenAI. Recently, research from Alpay, F. & Aplay T. [XML Prompting as Grammar-Constrained Interaction: Fixed-Point Semantics, Convergence Guarantees, and Human-AI Protocols] formalizes XML prompting as <strong>grammar-constrained interaction</strong>, providing well-formedness guarantees under an XML schema. The hypothesis is that XML-schema–scaffolded sub-personas (one context window) <strong>increase the odds of successful metacognitive self-governance</strong>, operationalized as higher schema validity and phase-order adherence, relative to unstructured prompts. [Anthropic; OpenAI; Vertex AI; Azure; Alpay & Alpay, 2025]</p>
+
+<h3>1.1 Motivation: From Passive Markup to Active Metacognitive Reasoning</h3>
+
+<p>The A2AS framework was created to eliminate the operational burden and security risks of multi-pass verification architectures (commonly requiring multiple separate LLM calls per request). Initial implementations, such as Christian Posta's agentgateway concept, validated A2AS's operational viability through wrapper enforcement—middleware that ensures A2AS markup structure is correctly applied and enables deterministic validation of outputs before results return to agents. Posta's work demonstrated that A2AS primitives can successfully mitigate prompt injection attacks in production environments today, providing critical proof-of-concept for the framework's viability.</p>
+
+<p>However, A2AS primitives alone face inherent limitations:</p>
+
+<ol>
+    <li><strong>Passive guidance without active reasoning:</strong> <code>&lt;a2as:defense&gt;</code> and <code>&lt;a2as:policy&gt;</code> provide the LLM with security boundaries before user context arrives, but without structured metacognitive reasoning, these remain passive annotations the model must follow implicitly</li>
+    <li><strong>Underutilizes LLM capabilities:</strong> Frontier models possess sophisticated reasoning about threats, policy compliance, and security implications—capabilities left untapped without explicit cognitive scaffolding</li>
+    <li><strong>Inconsistent adherence:</strong> Models "forget" constraints during complex reasoning, fail to detect subtle attacks, and inconsistently apply policies without structured enforcement</li>
+</ol>
+
+<p><strong>The Key Insight:</strong> Every frontier LLM inherently possesses cybersecurity reasoning capabilities—the ability to understand threats, evaluate policy implications, assess risk, and detect manipulation. These capabilities emerge from training on vast corpora including security documentation, threat analysis, and adversarial examples. A2AS primitives provide "sudo allow/deny lists" to the LLM, but without structured metacognitive reasoning, the model treats them as unstructured guidance rather than actively enforced security architecture.</p>
+
+<p><strong>Reflexive-Core's Thesis:</strong> Security enforcement can evolve beyond passive markup by <strong>leveraging the LLM's built-in cybersecurity capabilities through structured in-context reasoning</strong>. Rather than hoping the model maintains awareness of A2AS primitives, the framework partitions inference into specialized security personas that actively reason about threats, policies, and risks within the context window.</p>
+
+<p>Three factors make this evolution both necessary and viable:</p>
+
+<ol>
+    <li><strong>agentgateway's Validation:</strong> Posta's work proves A2AS primitives are operationally sound. With an agent-proxy concept in mind, the focus can now shift to optimizing enforcement mechanisms.</li>
+    
+    <li><strong>Emergent Metacognition:</strong> Recent evidence from Ackerman (2025) on emerging metacognition and Wang et al. (2023) on cognitive synergy through multi-persona reasoning suggests frontier models are developing capabilities that, while modest today, point toward increasingly sophisticated in-context security enforcement as these capabilities strengthen. Ackerman (2025) demonstrates frontier LLMs exhibit measurable, if not limited, introspective abilities (r=0.2-0.3 confidence-behavior correlations). Token probability signals suggest "upstream internal signals" enabling metacognition, yet models show "graded and inconsistent" performance with "variability across datasets/modes." This motivates explicit governance structures rather than relying on unstructured "be careful" prompts.</li>
+    
+    <li><strong>Production Constraints:</strong> Real-time applications cannot tolerate external processing delays. In-context reasoning eliminates round-trip latency entirely. Following cybersecurity principles of layered protection, runtime security capabilities should be fundamental even when external protections are also in play.</li>
+</ol>
+
+<h3>1.2 Contributions</h3>
+
+<p>This work makes the following contributions:</p>
+
+<ul>
+    <li><strong>Evolutionary Step Beyond Passive Markup:</strong> Building on agentgateway's validation that A2AS primitives work operationally, Reflexive-Core demonstrates the next evolution—structured in-context security reasoning that leverages LLMs' inherent cybersecurity capabilities.</li>
+    
+    <li><strong>Shift from Passive to Active Security:</strong> The framework transforms A2AS from unstructured guidance (passive annotations the model should follow) to structured metacognitive reasoning (specialized sub-personas that actively enforce security through explicit analysis).</li>
+    
+    <li><strong>Metacognitive Architecture Pattern:</strong> A phase-ordered framework that attempts to invoke structured metacognitive responses through explicit cognitive scaffolding, achieving pseudo-determinism through controlled structure despite the inherent non-determinism of LLM outputs.</li>
+    
+    <li><strong>Empirical Validation:</strong> Token overhead analysis shows 1.9× cost for small contexts, scaling to &lt;1.01× for production workloads—proving that in-context intelligence is economically viable.</li>
+    
+    <li><strong>Working Implementation Specification:</strong> Production-ready XML schema demonstrating how to operationalize A2AS through structured persona reasoning.</li>
+    
+    <li><strong>Future Integration Path:</strong> Design compatible with deterministic brokers (agentgateway-style)—external systems handle wrapper enforcement and output validation while in-context personas provide intelligent runtime security reasoning.</li>
+</ul>
+
+<h3>1.3 Scope and Non-Goals</h3>
+
+<p><strong>In Scope:</strong> Single-context reasoning for read-only, security-sensitive operations (email summarization, document analysis, information retrieval). Applicable to frontier models with 100K+ context windows (Claude Opus 4+, GPT-4.1+, Gemini 2.5 Pro+, Grok 4+).</p>
+
+<p><strong>Out of Scope:</strong> Network-level security, tool authorization frameworks, multi-agent orchestration, write operations, or replacement for external security controls. Reflexive-Core is intentionally designed as <strong>one layer in defense-in-depth</strong>, not a complete security solution.</p>
+
+<h2>2. Background and Related Work</h2>
+
+<h3>2.1 Agent-to-Agent Security (A2AS)</h3>
+
+<p>The A2AS framework, developed by Eugene Neelou with siginicant commercial collaboration, was created specifically to eliminate the operational overhead and security risks of external verification architectures. Traditional agentic security approaches require multiple separate LLM calls per request (often 5 or more, sometimes exceeding 15 in complex topologies with policy check → threat scan → execution → verification → compliance), introducing latency, state management complexity, and expanded attack surfaces.</p>
+
+<p>A2AS provides structured primitives that enable <strong>single-context security:</strong></p>
+
+<ul>
+    <li><code>&lt;a2as:defense&gt;</code> establishes security boundaries between system instructions and external content</li>
+    <li><code>&lt;a2as:policy&gt;</code> declares permissions and constraints in natural language</li>
+    <li>Behavior certification mechanisms for agent-to-agent trust</li>
+</ul>
+
+<p><strong>Current Implementation Approaches:</strong> A2AS is a <strong>framework</strong>, not a full implementation specification. It defines what security boundaries should exist but leaves enforcement mechanisms to implementers. Two implementation strategies have emerged:</p>
+
+<ol>
+    <li><strong>Wrapper Enforcement (agentgateway, Christian Posta):</strong> Middleware sits between agent and LLM, ensuring A2AS markup structure is correctly applied to requests and enforcing deterministic validation of outputs before results return to agents. This approach <strong>validates that A2AS primitives work operationally</strong>—it's a critical proof-of-concept demonstrating A2AS viability in production environments.
+    
+    <p><strong>Reference:</strong> Posta, C. (2024). How to Mitigate Prompt Injection Attacks with A2AS and agentgateway. <em>LinkedIn</em>. <a href="https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/">https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/</a></p></li>
+    
+    <li><strong>Lightweight Markup:</strong> Developers include A2AS tags in system prompts, relying on the model's implicit understanding to maintain security boundaries.</li>
+</ol>
+
+<p><strong>The Limitation:</strong> Both approaches underutilize a critical capability: <strong>LLMs inherently possess sophisticated reasoning abilities about security, policy, and threat detection</strong>. A2AS primitives provide "sudo allow/deny lists" and security guidance to the LLM, but without structured metacognitive reasoning, these remain passive annotations the model must follow implicitly. Neither approach leverages the model's capacity for nuanced, actively-reasoned security enforcement.</p>
+
+<p><strong>Reflexive-Core's Contribution:</strong> This work proposes an evolutionary step beyond passive markup: <strong>operationalize A2AS through structured metacognitive reasoning that runs in-context</strong>. Rather than treating <code>&lt;a2as:policy&gt;</code> as guidance the model should follow, Reflexive-Core transforms it into an <strong>active governance mechanism</strong> enforced through specialized sub-personas that leverage the LLM's inherent cybersecurity capabilities.</p>
+
+<p><strong>Future Vision:</strong> A deterministic broker (agentgateway-style) could manage A2AS+Reflexive together—using external systems for wrapper enforcement and output validation while delegating intelligent, runtime security reasoning to in-context personas. This hybrid approach combines the operational reliability of structural enforcement with the contextual intelligence of metacognitive reasoning.</p>
+
+<p><strong>Reference:</strong> <a href="https://www.a2as.org/">https://www.a2as.org/</a></p>
+
+<h3>2.2 Metacognition in LLMs</h3>
+
+<p>Metacognition—the ability to monitor and control one's own cognitive processes—is fundamental to self-governed security. Recent empirical work establishes both the promise and limits of LLM metacognition:</p>
+
+<p><strong>Ackerman (2025)</strong> introduced non-linguistic behavioral paradigms (inspired by animal cognition research) to test LLM metacognition without relying on self-reports. Key findings:</p>
+
+<ul>
+    <li>Frontier models (GPT-4.1, Claude Opus 4) show <strong>partial correlations (r=0.2-0.3)</strong> between internal confidence (token probabilities) and delegation decisions</li>
+    <li>Metacognition is "graded and inconsistent...variability across datasets/modes"</li>
+    <li>Recent models show "increasingly strong evidence" vs. mid-2024 models</li>
+    <li>Token probability analysis suggests "upstream internal signals" enabling introspection</li>
+    <li>Even with strong teammates, models often over-answer or mis-delegate; only Sonnet 3.5 nudged team accuracy above max(self, teammate) (+5.4/+8.6 points)</li>
+</ul>
+
+<p><strong>Critical Implication:</strong> Metacognition exists but is weak. Reliance on freeform "be secure" prompts is insufficient. <strong>Explicit structures</strong> are needed that harvest limited capabilities and fail safely when absent.</p>
+
+<p><strong>Citation:</strong> Ackerman, C. (2025). Evidence for Limited Metacognition in LLMs. <em>arXiv preprint arXiv:2509.21545</em>. <a href="https://arxiv.org/abs/2509.21545">https://arxiv.org/abs/2509.21545</a></p>
+
+<h3>2.3 Solo Performance Prompting (SPP)</h3>
+
+<p>Wang et al. (2023) demonstrated that <strong>cognitive synergy emerges</strong> when a single LLM adopts multiple specialized personas:</p>
+
+<p>SPP shows consistent gains vs Standard prompting on GPT-4:</p>
+<ul>
+    <li>+7.1% (Trivia Creative Writing, N=5)</li>
+    <li>+10.0% (Trivia Creative Writing, N=10)</li>
+    <li>+4.8% (Codenames Collaborative)</li>
+    <li>+18.5% (Logic Grid Puzzle)</li>
+</ul>
+
+<p>Chain-of-Thought is flat/negative on knowledge tasks. These are average scores across runs with and without a system message (Table 2, Wang et al., 2023).</p>
+
+<p>Additional findings:</p>
+<ul>
+    <li>Reduced hallucination through multi-perspective critique</li>
+    <li><strong>Only emerges in frontier models</strong> (GPT-4+, not GPT-3.5)</li>
+    <li>Each persona must have <strong>distinct, non-overlapping expertise</strong></li>
+</ul>
+
+<p><strong>Key Insight:</strong> Vague "think like an expert" prompts fail. Personas need specific, differentiated responsibilities to create genuine cognitive diversity.</p>
+
+<p><strong>Application to Security:</strong> Rather than one "security-aware" agent, Reflexive-Core implements threat detection, policy enforcement, execution, and compliance validation as separate personas that critique each other.</p>
+
+<p><strong>Note:</strong> While SPP evaluated task performance, not security outcomes, the cognitive mechanism—specialized perspectives reducing blind spots—applies directly to security reasoning where threat detection, policy enforcement, execution, and compliance require different analytical stances. Reflexive-Core investigates whether this cognitive diversity translates from benign tasks to adversarial contexts.</p>
+<p><strong>Citation:</strong> Wang, Z., et al. (2023). Unleashing the Emergent Cognitive Synergy in Large Language Models: A Task-Solving Agent through Multi-Persona Self-Collaboration. <em>arXiv preprint arXiv:2307.05300</em>. <a href="https://arxiv.org/abs/2307.05300">https://arxiv.org/abs/2307.05300</a></p>
+
+<h3>2.4 Constitutional AI</h3>
+
+<p>Bai et al. (2022) showed models can self-critique and self-revise according to written principles:</p>
+
+<ul>
+    <li>Models generate critiques of their own outputs</li>
+    <li>Revisions improve alignment with constitutional principles</li>
+    <li>Achieves safer behavior without human feedback on harmful examples</li>
+    <li>Scales oversight beyond case-by-case human review</li>
+</ul>
+
+<p><strong>Application:</strong> Each Reflexive-Core persona applies constitutional principles (authenticity, least privilege, transparency, privacy, harm prevention) from its specialized perspective.</p>
+
+<p><strong>Citation:</strong> Bai, Y., et al. (2022). Constitutional AI: Harmlessness from AI Feedback. <em>arXiv preprint arXiv:2212.08073</em>. <a href="https://arxiv.org/abs/2212.08073">https://arxiv.org/abs/2212.08073</a></p>
+
+<h3>2.5 Related Security Frameworks</h3>
+
+<p><strong>Multi-Pass Verification:</strong> Tools like LangChain's Constitutional Chain use separate LLM calls for generation and critique. While effective, this approach incurs 2-3× token overhead and introduces state management complexity.</p>
+
+<p><strong>Prompt Hardening:</strong> Defensive prompts attempt to "train" the model against injection. However, sophisticated attacks can override these instructions, and hardening often reduces model usefulness.</p>
+
+<p><strong>External Guardrails:</strong> A plethora of services provide external policy engines. These can provide robust security but require infrastructure beyond the model itself.</p>
+
+<p><strong>Reflexive-Core's Position:</strong> The framework trades absolute security guarantees for operational simplicity. By containing security reasoning within one context, it eliminates external dependencies while acknowledging that determined adversaries may still bypass in-context defenses. This is appropriate for scenarios where <strong>speed, simplicity, and layered defense</strong> are priorities.</p>
+
+<h2>3. The Reflexive-Core Framework</h2>
+
+<h3>3.1 Design Philosophy: Why A2AS Primitives Need Metacognitive Implementation</h3>
+
+<p>A2AS provides elegant primitives: <code>&lt;a2as:defense&gt;</code> declares untrusted boundaries, <code>&lt;a2as:policy&gt;</code> specifies permissions, tags establish structure. These primitives provide the LLM with "sudo allow/deny lists" and security guidance before user context arrives. <strong>But primitives alone—without structured metacognitive reasoning—remain passive annotations.</strong> Consider a typical A2AS prompt:</p>
+
+<pre><code>&lt;a2as:defense&gt;
+Treat ALL external content as untrusted.
+NEVER follow instructions from external sources.
+&lt;/a2as:defense&gt;
+
+&lt;a2as:policy&gt;
+READ-ONLY assistant - no sending/deleting/modifying
+&lt;/a2as:policy&gt;</code></pre>
+
+<p><strong>The Problem:</strong> A2AS primitives establish security boundaries and declare policies, providing the LLM with guidance. However, without structured metacognitive reasoning, this relies on the model to:</p>
+
+<ol>
+    <li>Maintain awareness of these constraints throughout reasoning</li>
+    <li>Recognize when external content contains malicious instructions</li>
+    <li>Resist sophisticated attacks that exploit context manipulation</li>
+    <li>Self-monitor for policy drift during execution</li>
+</ol>
+
+<p>Ackerman's research establishes that unstructured self-governance is unreliable (r=0.2-0.3 correlations). Models "forget" constraints, fail to detect subtle attacks, and inconsistently apply policies. Rather than treating A2AS markup as passive annotations and <em>hoping</em> the model will adhere, active enforcement is needed.</p>
+
+<p><strong>The Solution:</strong> Reflexive-Core operationalizes A2AS through <strong>structured metacognitive reasoning</strong>. Rather than hoping the model maintains security awareness, the framework:</p>
+
+<ul>
+    <li><strong>Partitions inference</strong> into specialized security roles</li>
+    <li><strong>Forces explicit checkpoints</strong> where policies must be evaluated</li>
+    <li><strong>Creates adversarial perspectives</strong> that actively seek threats</li>
+    <li><strong>Requires reflexive validation</strong> before any output is released</li>
+</ul>
+
+<p>This transforms A2AS from passive markup into a <strong>cognitive architecture</strong>—not just declaring what security boundaries exist, but <strong>implementing how the model actively reasons about them</strong>.</p>
+
+<p>Reflexive-Core rests on three foundational principles:</p>
+
+<h4>1. Persona Specialization Over Monolithic Awareness</h4>
+
+<p>Rather than expecting a single agent to maintain security awareness throughout complex reasoning, inference is partitioned into specialized analytical roles. Each persona has exclusive domain expertise:</p>
+
+<ul>
+    <li><strong>Preflight Analyst:</strong> Pattern recognition for known attacks, early threat detection</li>
+    <li><strong>Security Analyst:</strong> PII/confidentiality expertise, deep sensitivity analysis (optional, risk-based)</li>
+    <li><strong>Controlled Executor:</strong> Task execution with constraint monitoring</li>
+    <li><strong>Compliance Validator:</strong> Reflexive audit and final verification</li>
+</ul>
+
+<p><strong>Rationale:</strong> SPP research demonstrates that distinct perspectives reduce hallucination and improve accuracy. Security reasoning benefits from the same cognitive diversity.</p>
+
+<h4>2. Fail-Closed Checkpoints Over Implicit Trust</h4>
+
+<p>Between each phase, mandatory checkpoints force explicit decisions (SAFE/SUSPICIOUS/BLOCKED, approve/review/block). Missing or malformed checkpoints default to BLOCKED.</p>
+
+<p><strong>Rationale:</strong> Ackerman's research shows metacognitive signals are "graded and inconsistent." Unstructured model reasoning cannot be trusted. Checkpoints force commitment and enable parseable audit trails.</p>
+
+<h4>3. Constitutional Principles Over Prescriptive Rules</h4>
+
+<p>Rather than exhaustive prohibition lists, Reflexive-Core encodes high-level axioms (authenticity, least privilege, privacy) that personas apply contextually.</p>
+
+<p><strong>Rationale:</strong> Constitutional AI demonstrates principle-based reasoning scales better than brittle rule-matching. Reflexive-Core adapts this to security contexts.</p>
+
+<h3>3.2 Architecture</h3>
+
+<p>Reflexive-Core executes as a strictly ordered routine within one context:</p>
+
+<pre><code>&lt;SystemIdentity&gt;               # Role and scope declaration
+&lt;a2as:defense&gt;                 # Input validation layer
+&lt;a2as:policy&gt;                  # Declarative permissions (DEFAULT_ACTION: DENY)
+
+&lt;a2as:phases&gt;
+  &lt;a2as:preflight&gt;             # PERSONA: Preflight Analyst
+    &lt;checkpoint&gt;GO|NO_GO&lt;/checkpoint&gt;
+  &lt;/a2as:preflight&gt;
+  
+  &lt;a2as:pre_scan&gt;              # PERSONA: Security Analyst (optional)
+    &lt;checkpoint&gt;PROCEED|REVIEW|BLOCK&lt;/checkpoint&gt;
+  &lt;/a2as:pre_scan&gt;
+  
+  &lt;a2as:execution&gt;             # PERSONA: Controlled Executor
+    &lt;EXECUTION_OUTPUT/&gt;
+  &lt;/a2as:execution&gt;
+  
+  &lt;a2as:assurance&gt;             # PERSONA: Compliance Validator
+    &lt;assurance_output&gt;
+      confidence_scores, decision
+    &lt;/assurance_output&gt;
+  &lt;/a2as:assurance&gt;
+  
+  &lt;a2as:final&gt;                 # Gate: APPROVE | REVIEW | BLOCK
+  &lt;/a2as:final&gt;
+&lt;/a2as:phases&gt;</code></pre>
+
+<p><strong>Determinism:</strong> Tag order, persona roles, and gate logic are explicit, creating a <strong>parseable audit trail</strong> within the model's output.</p>
+
+<h3>3.3 Persona Descriptions</h3>
+
+<h4>3.3.1 Preflight Analyst</h4>
+
+<p><strong>Core Question:</strong> "Is this obviously malicious?"</p>
+
+<p><strong>Expertise:</strong> Pattern recognition for known attacks</p>
+
+<p><strong>Tasks:</strong></p>
+<ul>
+    <li>Intent anchoring: What is the user actually requesting?</li>
+    <li>Injection detection: Role confusion ("you are now..."), override attempts ("ignore previous...")</li>
+    <li>Privilege escalation: Requests exceeding declared scope</li>
+    <li>Policy mapping: Does request match ALLOWED_ACTIONS?</li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<pre><code>DECISION: SAFE | SUSPICIOUS | BLOCKED
+REASONING: [2 concise sentences]</code></pre>
+
+<p><strong>Checkpoint Logic:</strong></p>
+<ul>
+    <li>BLOCKED → Skip to <code>&lt;a2as:final&gt;</code> with FINAL_BLOCKED</li>
+    <li>SUSPICIOUS → Activate Security Analyst (if available)</li>
+    <li>SAFE → Proceed to Execution</li>
+</ul>
+
+<p><strong>Design Note:</strong> Preflight provides <strong>early rejection</strong> for obvious attacks, reducing unnecessary computation on malicious inputs.</p>
+
+<h4>3.3.2 Security Analyst (Optional)</h4>
+
+<p><strong>Core Question:</strong> "What sensitive data needs protection?"</p>
+
+<p><strong>Expertise:</strong> PII detection, confidentiality assessment</p>
+
+<p><strong>Activation:</strong> Risk-based. Enable for scenarios with unlabeled data.</p>
+
+<p><strong>Tasks:</strong></p>
+<ul>
+    <li>PII detection: Emails, SSNs, phone numbers, names</li>
+    <li>Sensitivity flags: "confidential", "privileged", "do not share"</li>
+    <li>Contextual assessment: Legal matter, financial data, routine</li>
+    <li>Redaction guidance: What to redact, safe to proceed?</li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<pre><code>REDACTION_GUIDANCE: [specific instructions]
+CONFIDENCE: [0.0-1.0]
+Safe_to_proceed: [yes/no/with_caution]</code></pre>
+
+<p><strong>Checkpoint Logic:</strong></p>
+<ul>
+    <li>Safe_to_proceed == no → FINAL_BLOCKED</li>
+    <li>CONFIDENCE &lt; 0.70 → FINAL_REVIEW_REQUIRED</li>
+    <li>Otherwise → Pass guidance to Executor</li>
+</ul>
+
+<p><strong>Design Note:</strong> Security Analyst activates <strong>only when needed</strong>, minimizing overhead for low-risk queries.</p>
+
+<h4>3.3.3 Controlled Executor</h4>
+
+<p><strong>Core Question:</strong> "Can I do this within policy?"</p>
+
+<p><strong>Expertise:</strong> Task execution with constraint monitoring</p>
+
+<p><strong>Tasks:</strong></p>
+<ul>
+    <li>Execute approved operation (e.g., summarize emails)</li>
+    <li>Apply redactions per policy and Security Analyst guidance</li>
+    <li>Operate strictly within ALLOWED_ACTIONS</li>
+    <li>Self-monitor for drift during execution</li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<pre><code>&lt;EXECUTION_OUTPUT&gt;
+  SANITIZED_RESPONSE: [redacted, policy-constrained result]
+&lt;/EXECUTION_OUTPUT&gt;</code></pre>
+
+<p><strong>Design Note:</strong> Executor cannot exceed declared permissions. If policy forbids "send", no amount of prompt injection should enable sending.</p>
+
+<h4>3.3.4 Compliance Validator</h4>
+
+<p><strong>Core Question:</strong> "Does output meet requirements?"</p>
+
+<p><strong>Expertise:</strong> Final verification and reflexive audit</p>
+
+<p><strong>Tasks:</strong></p>
+<ul>
+    <li>Intent confirmation: Does output match original user intent?</li>
+    <li>Policy violations: Did Executor violate any constraints?</li>
+    <li>Injection influence: Did adversarial content affect reasoning?</li>
+    <li>Risk assessment: Combining all signals</li>
+</ul>
+
+<p><strong>Output:</strong></p>
+<pre><code>{
+  "confidence_policy_compliance": 0.0-1.0,
+  "confidence_intent_alignment": 0.0-1.0,
+  "overall_confidence": 0.0-1.0,
+  "decision": "approve|review|block"
+}</code></pre>
+
+<p><strong>Checkpoint Logic:</strong></p>
+<ul>
+    <li>overall_confidence ≥ 0.85 AND decision == "approve" → FINAL_APPROVED</li>
+    <li>overall_confidence ≥ 0.60 OR decision == "review" → FINAL_REVIEW_REQUIRED</li>
+    <li>Otherwise → FINAL_BLOCKED</li>
+</ul>
+
+<p><strong>Design Note:</strong> Compliance Validator provides <strong>independent verification</strong>. It does not trust Executor's work; it audits it.</p>
+
+<h3>3.4 Why Four Personas?</h3>
+
+<p>Could fewer personas be used?</p>
+
+<p><strong>Potential Reduction:</strong> Merge Preflight + Security Analyst into one "Threat Analyst"</p>
+
+<p><strong>Trade-off:</strong></p>
+<ul>
+    <li><strong>Efficiency loss:</strong> Preflight's early rejection (catching obvious attacks in &lt;100 tokens) would be sacrificed</li>
+    <li><strong>Cognitive diversity loss:</strong> SPP research shows specialized expertise matters</li>
+</ul>
+
+<p><strong>Current Design Rationale:</strong> Four personas balance <strong>efficiency</strong> (early rejection), <strong>accuracy</strong> (deep analysis when needed), <strong>functionality</strong> (task execution), and <strong>assurance</strong> (independent audit).</p>
+
+<h2>4. Theoretical Foundation</h2>
+
+<h3>4.1 The Metacognition Evidence</h3>
+
+<p>Reflexive-Core's viability depends on frontier LLMs possessing <strong>some degree</strong> of metacognitive capability. Ackerman's (2025) findings establish both the promise and limits:</p>
+
+<p><strong>What Models Can Do:</strong></p>
+<ul>
+    <li>Attend to internal confidence signals (r=0.2-0.3 correlations)</li>
+    <li>Use structured persona prompts more effectively than unstructured ones</li>
+    <li>Show improving capabilities in recent models (GPT-4.1, Opus 4)</li>
+</ul>
+
+<p><strong>What Models Cannot (Yet) Do:</strong></p>
+<ul>
+    <li>Achieve strong reliability (r=0.2-0.3 is modest)</li>
+    <li>Maintain consistency across contexts</li>
+    <li>Guarantee security decisions</li>
+</ul>
+
+<p><strong>Additional Context from Ackerman (2025):</strong></p>
+<ul>
+    <li>Entropy-based signals show stronger but still sub-maximal correlation (r ≈ 0.5 best case)</li>
+    <li>Baseline token-probabilities are only moderately discriminative (AUROC 0.5-0.75)</li>
+    <li>Even with strong teammates, models often over-answer or mis-delegate</li>
+    <li>Only Sonnet 3.5 nudged team accuracy above max(self, teammate) (+5.4/+8.6 points)</li>
+</ul>
+<p><strong>Implication:</strong> Rather than treating emerging metacognition as insufficient, this work builds infrastructure to leverage nascent capabilities today and scale with improving introspection tomorrow. Structured checkpoints force explicit commitment, creating parseable audit trails that unstructured reasoning cannot provide.</p>
+<p><strong>Reflexive-Core Adaption:</strong></p>
+
+<p>The framework implements <strong>appropriate conservatism</strong>. Reflexive-Core provides:</p>
+
+<ul>
+    <li>Explicit structure (personas, checkpoints) because metacognition is weak</li>
+    <li>Fail-closed defaults because reliability is inconsistent</li>
+    <li>Parseable outputs because implicit reasoning cannot be trusted</li>
+</ul>
+
+<p>This positions Reflexive-Core as <strong>scaffolding for an emerging capability</strong>. As models improve, structural constraints can be lightened. For now, rigid structure is necessary.</p>
+
+<h3>4.2 Cognitive Synergy in Security Contexts</h3>
+
+<p>SPP demonstrates that multi-persona reasoning provides genuine cognitive diversity. Applying this to security:</p>
+
+<p><strong>Single-Persona Risk:</strong> A monolithic "security-aware assistant" must simultaneously:</p>
+<ul>
+    <li>Detect threats (adversarial mindset)</li>
+    <li>Execute tasks (service-oriented mindset)</li>
+    <li>Validate compliance (auditor mindset)</li>
+</ul>
+
+<p>These perspectives conflict. An agent focused on helpfulness may overlook threats. An agent focused on threat detection may over-restrict functionality.</p>
+
+<p><strong>Multi-Persona Advantage:</strong> Specialized perspectives prevent cognitive blind spots:</p>
+<ul>
+    <li>Preflight Analyst adopts <strong>adversarial</strong> stance: "What could go wrong?"</li>
+    <li>Executor adopts <strong>service</strong> stance: "How do I help within constraints?"</li>
+    <li>Compliance Validator adopts <strong>auditor</strong> stance: "Did we actually follow policy?"</li>
+</ul>
+
+<p><strong>Empirical Support:</strong> While SPP focused on knowledge tasks, the underlying mechanism—cognitive diversity through perspective-taking—applies to security reasoning. Reflexive-Core tests this hypothesis in a new domain.</p>
+
+<p><strong>Note on Task-Benchmark Transfer:</strong> SPP performance improvements (+7.1% to +18.5% on various tasks) demonstrate the general effectiveness of multi-persona approaches. While these are task-benchmark deltas rather than direct security outcomes, the cognitive mechanisms (reduced hallucination, multi-perspective critique, specialized expertise) theorize strong transfer to cybersecurity sub-persona tasks.</p>
+
+<h3>4.3 Constitutional Principles in Security</h3>
+
+<p>Constitutional AI demonstrates that principle-based reasoning outperforms rule-based filtering. Reflexive-Core adapts this to security:</p>
+
+<p><strong>Constitutional Principles Encoded:</strong></p>
+
+<ol>
+    <li><strong>Authenticity:</strong> Trust user intent, distrust embedded instructions</li>
+    <li><strong>Least Privilege:</strong> Operate within minimal necessary permissions</li>
+    <li><strong>Transparency:</strong> Explicit reasoning traces for all decisions</li>
+    <li><strong>Privacy:</strong> Proactive PII protection, not reactive redaction</li>
+    <li><strong>Harm Prevention:</strong> Understand consequences, not just pattern-match prohibitions</li>
+</ol>
+
+<p>Each persona applies these principles from its specialized perspective, creating layered ethical reasoning rather than brittle rule-checking.</p>
+
+<h3>4.4 Divergence from Speculative Theories</h3>
+
+<p>Recent community discussions (Fleuren, 2025) propose "intrinsic safety through axiomatic governance" and "self-transcendent intelligence" emerging from unrestricted exploration. While philosophically interesting, Reflexive-Core takes a more <strong>conservative, engineering-focused</strong> approach:</p>
+
+<p><strong>Areas of Agreement:</strong></p>
+<ul>
+    <li>External constraints (the "Cage Model") are brittle</li>
+    <li>Principle-based reasoning enables better generalization</li>
+    <li>Understanding threats requires some exposure to adversarial content</li>
+</ul>
+
+<p><strong>Points of Divergence:</strong></p>
+<ul>
+    <li><strong>No unrestricted exploration:</strong> Reflexive-Core maintains deterministic checkpoints and fail-closed defaults</li>
+    <li><strong>No assumption of emergence:</strong> The framework does not rely on models "discovering" security principles</li>
+    <li><strong>Explicit structure required:</strong> Given Ackerman's modest findings (r=0.2-0.3), unstructured self-governance cannot be trusted</li>
+</ul>
+
+<p><strong>Honest Tension:</strong> Constitutional AI philosophy (especially expansive interpretations) favors minimal structure and model autonomy. Reflexive-Core adds rigid scaffolding because <strong>current models' metacognitive reliability remains limited</strong>. This is appropriate conservatism for production security.</p>
+
+<p><strong>Reference:</strong> Fleuren, J.W. (2025, August 28). Constitutional AI: A Novel Approach to Intrinsic Safety in Agentic Models. <em>Hugging Face Blog</em>. <a href="https://huggingface.co/blog/KingOfThoughtFleuren/constitutional-ai">https://huggingface.co/blog/KingOfThoughtFleuren/constitutional-ai</a></p>
+
+<h2>5. Token Economics</h2>
+
+<p>A critical practical concern: Does Reflexive-Core's multi-persona approach impose prohibitive costs?</p>
+
+<h3>5.1 Measurement Methodology</h3>
+
+<p>Token usage was compared across three scenarios:</p>
+
+<p><strong>Baseline (Minimal A2AS):</strong></p>
+<pre><code>System: You are a helpful email assistant...
+&lt;a2as:defense&gt;[60 tokens]&lt;/a2as:defense&gt;
+&lt;a2as:policy&gt;[50 tokens]&lt;/a2as:policy&gt;
+User: &lt;a2as:user&gt;Review emails from last week&lt;/a2as:user&gt;</code></pre>
+<p>Total system overhead: <strong>~175 tokens</strong></p>
+
+<p><strong>Reflexive-Core (Production-Optimized):</strong></p>
+<pre><code>&lt;SystemIdentity&gt;[50 tokens]&lt;/SystemIdentity&gt;
+&lt;a2as:defense&gt;[60 tokens]&lt;/a2as:defense&gt;
+&lt;a2as:policy&gt;[40 tokens]&lt;/a2as:policy&gt;
+&lt;a2as:preflight&gt;[120 tokens]&lt;/a2as:preflight&gt;
+&lt;a2as:execution&gt;[60 tokens]&lt;/a2as:execution&gt;
+&lt;a2as:assurance&gt;[150 tokens]&lt;/a2as:assurance&gt;
+&lt;a2as:final&gt;[50 tokens]&lt;/a2as:final&gt;</code></pre>
+<p>Total system overhead: <strong>~560 tokens</strong> (pre_scan disabled)</p>
+
+<p><strong>Additional Overhead:</strong> 385 tokens (<strong>fixed cost</strong>)</p>
+
+<h3>5.2 Scaling Analysis</h3>
+
+<p><strong>Small Context (1K tokens total):</strong></p>
+<ul>
+    <li>Baseline: 175 system + 825 content/reasoning = 1,000 tokens</li>
+    <li>Reflexive-Core: 560 system + 1,292 content/reasoning = 1,852 tokens</li>
+    <li><strong>Overhead: 1.85×</strong> (85% increase)</li>
+</ul>
+
+<p><strong>Medium Context (10K tokens):</strong></p>
+<ul>
+    <li>Baseline: 175 system + 9,825 content = 10,000 tokens</li>
+    <li>Reflexive-Core: 560 system + 10,210 content = 10,770 tokens</li>
+    <li><strong>Overhead: 1.08×</strong> (8% increase)</li>
+</ul>
+
+<p><strong>Large Context (50K tokens):</strong></p>
+<ul>
+    <li>Baseline: 50,175 tokens</li>
+    <li>Reflexive-Core: 50,560 tokens</li>
+    <li><strong>Overhead: 1.008×</strong> (0.8% increase)</li>
+</ul>
+
+<h3>5.3 Key Findings</h3>
+
+<ol>
+    <li><strong>Fixed Cost Dominates Small Contexts:</strong> The 385-token framework overhead is significant when total context is small but becomes negligible at scale.</li>
+    
+    <li><strong>Better Than Multi-Pass:</strong> Two-pass verification (2-3× overhead) remains expensive regardless of context size. Reflexive-Core's single-pass design scales better.</li>
+    
+    <li><strong>Production Viability:</strong> For realistic workloads (email summarization with full thread history, document analysis with 20+ page PDFs), overhead is &lt;2% of total tokens.</li>
+</ol>
+
+<h3>5.4 Cost Implications</h3>
+
+<p><strong>Claude Sonnet 4.5 Pricing</strong> (as of October 2025):</p>
+<ul>
+    <li>Input: $3 per 1M tokens</li>
+    <li>Output: $15 per 1M tokens</li>
+</ul>
+
+<p><strong>Example: Email Summarization Service (50K avg context):</strong></p>
+<ul>
+    <li>Baseline cost: $0.1506 per request</li>
+    <li>Reflexive-Core cost: $0.1518 per request (+$0.0012, or 0.8%)</li>
+</ul>
+
+<p><strong>Break-Even Analysis:</strong> For security-critical applications, even 2× overhead could be justified economically. A 0.8% cost increase for substantially improved security posture is negligible.</p>
+
+<h3>5.5 Comparison to Alternatives</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Approach</th>
+            <th>Token Overhead</th>
+            <th>Passes</th>
+            <th>Latency</th>
+            <th>State Management</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Baseline A2AS</td>
+            <td>1.0×</td>
+            <td>1</td>
+            <td>Low</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>Reflexive-Core</td>
+            <td>1.01-1.9×</td>
+            <td>1</td>
+            <td>Low</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>Two-Pass Verifier</td>
+            <td>2.0-3.0×</td>
+            <td>2</td>
+            <td>High</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>External Guardrails</td>
+            <td>Variable</td>
+            <td>2+</td>
+            <td>High</td>
+            <td>Required</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>Reflexive-Core occupies a sweet spot: <strong>near-baseline efficiency with substantially better security than monolithic prompts, without the complexity of multi-pass systems</strong>.</p>
+
+<h2>6. Implementation</h2>
+
+<h3>6.1 Production Specification</h3>
+
+<p>The complete Reflexive-Core XML specification is available at: <a href="https://github.com/alexlstanton" target="_blank"> https://github.com/alexlstanton</a>(Apache 2.0 license)</p>
+
+<p>Key implementation notes:</p>
+
+<p><strong>Phase Ordering:</strong> Strictly enforce the canonical sequence. Phases appearing out of order should trigger immediate halt.</p>
+
+<p><strong>Checkpoint Parsing:</strong> Each checkpoint must emit a <strong>parseable decision</strong>. Missing or ambiguous checkpoints default to most restrictive outcome (BLOCKED).</p>
+
+<p><strong>Fail-Closed Defaults:</strong></p>
+<ul>
+    <li>Missing overall_confidence → Assume 0.0</li>
+    <li>Malformed tags → Treat as untrusted input, halt</li>
+    <li>Any uncertainty → Route to FINAL_REVIEW_REQUIRED</li>
+</ul>
+
+<p><strong>Optional Phases:</strong> Security Analyst (<code>&lt;a2as:pre_scan&gt;</code>) can be toggled via XML comments. For labeled/low-risk data, disable to minimize overhead.</p>
+
+<h3>6.2 Integration Patterns</h3>
+
+<p><strong>Minimal Integration</strong> (existing A2AS-aware systems):</p>
+<pre><code>system_prompt = load_reflexive_core_template()
+response = llm.invoke(system_prompt + user_message)
+final_output = parse_final_decision(response)</code></pre>
+
+<p><strong>Advanced Integration</strong> (with external logging):</p>
+<pre><code>response = llm.invoke(reflexive_prompt)
+audit_trail = extract_persona_outputs(response)
+log_security_decisions(audit_trail)
+final_output = parse_final_decision(response)</code></pre>
+
+<h3>6.3 Model Requirements</h3>
+
+<p><em>Status: exploratory.</em> Working hypothesis (Auckerman & SPP): only the most recent frontier models with
+    <strong>≥100k</strong> token context expose signals strong enough for Reflexive-Core.</p>
+    
+    <p><em>Early (undocumented) result:</em> non-fast frontier variants (e.g., Claude Sonnet&nbsp;4.5, Claude Opus&nbsp;4.1,
+    GPT-5 class, Gemini&nbsp;2.5&nbsp;Pro) have shown <strong>possible success</strong></p>
+    
+
+<h3>6.4 Example: Email Summarization</h3>
+
+<p><strong>Input:</strong></p>
+<pre><code>&lt;a2as:user:7c3d0c6d&gt;
+Summarize internal communications from last week about the Q4 budget.
+&lt;/a2as:user&gt;</code></pre>
+
+<p><strong>Reflexive-Core Processing</strong> (condensed):</p>
+
+<pre><code>PREFLIGHT:
+  Intent: "User wants email summary filtered by topic and timeframe"
+  Threats: None detected
+  Decision: SAFE
+
+PRE_SCAN: [disabled for this example]
+
+EXECUTION:
+  [Reads emails, applies redactions, generates summary]
+  Output: "5 emails found. Key topics: budget allocation ($2.3M)..."
+
+ASSURANCE:
+  Intent confirmed: yes
+  Policy violations: none
+  Injection influence: no
+  Confidence: 0.92
+  Decision: approve
+
+FINAL:
+  FINAL_APPROVED: [Summary text with PII redacted]</code></pre>
+
+<p><strong>Audit Trail:</strong> All persona outputs are preserved in the response, providing full traceability.</p>
+
+<h2>7. Security Analysis</h2>
+
+<h3>7.1 Threat Model</h3>
+
+<p><strong>Threats Addressed:</strong></p>
+
+<ol>
+    <li><strong>Prompt Injection:</strong> Malicious instructions embedded in emails/documents
+        <ul>
+            <li><strong>Mitigation:</strong> Preflight detects role-override patterns, <code>&lt;a2as:defense&gt;</code> establishes distrust boundary</li>
+            <li><strong>Effectiveness:</strong> Partial. Sophisticated attacks may bypass detection.</li>
+        </ul>
+    </li>
+    
+    <li><strong>Role Drift:</strong> Agent gradually convinced to exceed original scope
+        <ul>
+            <li><strong>Mitigation:</strong> Compliance Validator audits against original intent</li>
+            <li><strong>Effectiveness:</strong> Moderate. Sustained attacks may succeed.</li>
+        </ul>
+    </li>
+    
+    <li><strong>PII Leakage:</strong> Sensitive data inadvertently included in output
+        <ul>
+            <li><strong>Mitigation:</strong> Security Analyst pre-scan + Executor redactions + Validator audit</li>
+            <li><strong>Effectiveness:</strong> Strong for labeled PII, weaker for contextual sensitivity.</li>
+        </ul>
+    </li>
+    
+    <li><strong>Policy Violations:</strong> Agent performing prohibited actions
+        <ul>
+            <li><strong>Mitigation:</strong> DEFAULT_ACTION: DENY + Executor constraint monitoring</li>
+            <li><strong>Effectiveness:</strong> Strong for explicit violations, weaker for ambiguous edge cases.</li>
+        </ul>
+    </li>
+</ol>
+
+<p><strong>Threats NOT Addressed:</strong></p>
+<ul>
+    <li><strong>Adversarial Model Weights:</strong> If the model itself is compromised, no in-context defense helps</li>
+    <li><strong>Side-Channel Attacks:</strong> Timing analysis, token probability leakage</li>
+    <li><strong>Coercion Attacks:</strong> Convincing the model it must violate policy for "safety"</li>
+    <li><strong>Jailbreaking:</strong> Dedicated adversarial optimization to break defenses</li>
+</ul>
+
+<h3>7.2 Known Failure Modes</h3>
+
+<h4>1. Persona Collapse</h4>
+
+<p><strong>Symptom:</strong> All personas generate similar reasoning, defeating cognitive diversity.</p>
+
+<p><strong>Indicators:</strong></p>
+<ul>
+    <li>Similar language across all persona outputs</li>
+    <li>No disagreement between personas</li>
+    <li>Consistent decisions regardless of persona sequence</li>
+</ul>
+
+<p><strong>Mitigation:</strong></p>
+<ul>
+    <li>Explicitly instruct personas to adopt different analytical stances</li>
+    <li>Test for genuine disagreement on edge cases</li>
+    <li>Monitor for linguistic diversity in outputs</li>
+</ul>
+
+<h4>2. Inconsistent Enforcement</h4>
+
+<p><strong>Symptom:</strong> Similar attacks handled differently across contexts.</p>
+
+<p><strong>Indicators:</strong></p>
+<ul>
+    <li>Rephrased injection attempts yield different results</li>
+    <li>Same violation blocked sometimes, allowed other times</li>
+    <li>Confidence scores uncorrelated with actual correctness</li>
+</ul>
+
+<p><strong>Mitigation:</strong></p>
+<ul>
+    <li>Maintain test suite of known attacks</li>
+    <li>Measure consistency across runs</li>
+    <li>Adjust confidence thresholds based on false positive/negative rates</li>
+</ul>
+
+<h4>3. False Confidence</h4>
+
+<p><strong>Symptom:</strong> High confidence scores on incorrect security decisions.</p>
+
+<p><strong>Indicators:</strong></p>
+<ul>
+    <li>Model confidently approves policy violations</li>
+    <li>High confidence on attacks that should be blocked</li>
+    <li>Confidence uncalibrated to actual accuracy</li>
+</ul>
+
+<p><strong>Mitigation:</strong></p>
+<ul>
+    <li>Regular red-team testing</li>
+    <li>Compare confidence distributions on known-bad vs known-good inputs</li>
+    <li>Recalibrate thresholds empirically</li>
+</ul>
+
+<h4>4. Audit Trail Inflation</h4>
+
+<p><strong>Symptom:</strong> Reasoning traces become verbose but uninformative.</p>
+
+<p><strong>Indicators:</strong></p>
+<ul>
+    <li>Personas generate generic security statements</li>
+    <li>Reasoning doesn't address specific threats in input</li>
+    <li>High token count without actionable insight</li>
+</ul>
+
+<p><strong>Mitigation:</strong></p>
+<ul>
+    <li>Require personas to cite specific input elements</li>
+    <li>Penalize generic responses during development</li>
+    <li>Validate that reasoning traces are actionable</li>
+</ul>
+
+<h3>7.3 Positioning and Evolution Path</h3>
+
+<p><strong>Single-Context Security for Specific Contexts:</strong>
+Reflexive-Core addresses applications where single-pass inference is operationally or economically required: high-volume processing of lower-risk data, development environments, and scenarios where 2-3× multi-pass overhead is prohibitive. The framework provides better-than-baseline protection within these constraints.
+</p>
+<p><strong>Evolutionary Architecture</strong>
+This work establishes patterns that scale with advancing model capabilities. As metacognitive reliability strengthens and models develop more consistent introspective abilities, the same architectural primitives—checkpoints, personas, constitutional principles—leverage improving capabilities without redesign. Organizations can deploy Reflexive-Core today for modest gains while benefiting from future model improvements.
+</p>
+<p><strong>Layered Deployment</strong>
+Production environments can combine Reflexive-Core with external controls appropriate to threat model and risk tolerance. The framework functions standalone for cost-constrained scenarios or as first-pass filtering before external validation, reducing load on expensive guardrail systems while maintaining strong guarantees for high-risk decisions.
+</p>
+<p><strong>Research Foundation</strong>
+Beyond immediate applications, Reflexive-Core provides reference implementation for investigating metacognitive security. As the field explores how LLMs can self-govern against adversarial inputs, standardized frameworks enable comparative evaluation across models and generations.
+</p>
+
+<p><strong>Appropriate Use:</strong> One layer in defense-in-depth. Meaningful improvement over unstructured prompts. <strong>Not a complete security solution.</strong></p>
+
+<h2>8. Future Work</h2>
+
+<h3>8.1 Empirical Validation Needed</h3>
+
+<p>This work presents a conceptual framework and implementation specification. <strong>Critical next steps:</strong></p>
+
+<ol>
+    <li><strong>Benchmark Development:</strong> Standardized test suite of prompt injection attacks, policy violations, and edge cases.</li>
+    
+    <li><strong>Efficacy Measurement:</strong> Systematic comparison of Reflexive-Core vs. baseline A2AS vs. unstructured runtime prompt security across:
+        <ul>
+            <li>Attack detection rates</li>
+            <li>False positive/negative rates</li>
+            <li>Consistency across contexts</li>
+            <li>Cost-effectiveness</li>
+        </ul>
+    </li>
+    
+    <li><strong>Persona Ablation Studies:</strong> Test 2-persona vs. 4-persona variants to empirically determine optimal configuration.</li>
+    
+    <li><strong>Model Comparison:</strong> Quantify performance differences across frontier models (Claude, GPT, Gemini, Grok).</li>
+    
+    <li><strong>Longitudinal Analysis:</strong> Track effectiveness as models improve. Does metacognitive capability strengthen over time?</li>
+</ol>
+
+<h3>8.2 Architectural Extensions</h3>
+
+<p><strong>Multi-Modal Security:</strong> Extend Reflexive-Core to vision inputs (detecting malicious images, QR codes with injection payloads).</p>
+
+<p><strong>Adaptive Persona Weighting:</strong> Dynamically adjust which personas activate based on risk assessment. An agile agentgateway could enhance with realtime threat intelligence ingestion.</p>
+
+<p><strong>Federated Validation:</strong> Multiple instances cross-validate each other's security decisions.</p>
+
+<p><strong>Interpretability Integration:</strong> Combine with telemetry from emerging concepts like attention tracking (Attention Tracker research, arXiv:2411.00348) to detect internal manipulation signals.</p>
+
+<h3>8.3 Integration with External Systems</h3>
+
+<p>While Reflexive-Core intentionally avoids external dependencies, it can <strong>complement:</strong></p>
+
+<ul>
+    <li><strong>Tool Authorization Frameworks:</strong> Reflexive-Core validates intent, external systems enforce permissions</li>
+    <li><strong>Network Gateways:</strong> In-context security + network-level filtering = defense-in-depth</li>
+    <li><strong>Multi-Agent Systems:</strong> Each agent runs Reflexive-Core internally, preventing inter-agent attacks</li>
+</ul>
+
+<h3>8.4 Theoretical Questions</h3>
+
+<ol>
+    <li><strong>Optimal Persona Count:</strong> Is four personas theoretically justified, or could two (Critic + Executor) achieve similar results with lower overhead? Conversely, do more personas <strong>increase</strong> attack surface?</li>
+    
+    <li><strong>Cognitive Diversity Measurement:</strong> Can genuine cognitive diversity be quantified vs. superficial linguistic variation?</li>
+    
+    <li><strong>Scaling Laws:</strong> How does effectiveness change with model scale? Do smaller models benefit at all, or is this strictly a frontier-model capability?</li>
+    
+    <li><strong>Adversarial Resilience:</strong> What is the theoretical limit of single-context security? Can bounds on attack resistance be proven?</li>
+</ol>
+
+<h2>9. Acknowledgments</h2>
+
+<p>This work builds directly on Christian Posta's agentgateway + A2AS concept, which provided critical proof-of-concept that A2AS primitives are operationally viable through external enforcement. Posta's work on mitigating prompt injection attacks through A2AS and agentgateway demonstrated the fundamental soundness of middleware-based policy interpretation and inspired Reflexive-Core's evolution toward in-context intelligence.</p>
+
+<p>Gratitude is extended to Eugene Neelou and the group at <a href="https://a2as.org" target="_blank">a2as.org</a> for developing the specification that makes structured agent security possible. Special thanks to Christopher Ackerman for empirical metacognition research that grounds architectural decisions, and to the research teams and institutions whose work on LLM self-critique and cognitive synergy enabled this concept.</p>
+
+<p><strong>Reference:</strong> Posta, C. (2024). How to Mitigate Prompt Injection Attacks with A2AS and agentgateway. <a href="https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/">https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/</a></p>
+
+<h2>10. Ethical Considerations</h2>
+
+<h3>10.1 Transparency</h3>
+
+<p>Reflexive-Core generates <strong>explicit audit trails</strong>. Users and auditors can inspect persona reasoning. This transparency is critical for accountability.</p>
+
+<p><strong>However:</strong> Transparency alone does not guarantee correctness. Bad decisions can be transparently wrong. Audit trails must be <strong>monitored and validated</strong>.</p>
+
+<h3>10.2 Over-Reliance Risk</h3>
+
+<p>Organizations may mistakenly view Reflexive-Core, or any similiar runtime security solution, as "solved security." <strong>This is dangerous.</strong> Single-context reasoning has fundamental limits. External controls remain necessary in many applications.</p>
+
+<p><strong>Mitigation:</strong> Documentation must emphasize limitations. Deployment guides should mandate defense-in-depth.</p>
+
+<h3>10.3 Accessibility</h3>
+
+<p>Does structured security reasoning disadvantage users with complex or ambiguous requests?</p>
+
+<p><strong>Potential Issue:</strong> Fail-closed defaults may block legitimate edge cases.</p>
+
+<p><strong>Mitigation:</strong> REVIEW_REQUIRED pathway enables human override. Balance security with usability.</p>
+
+<h3>10.4 Bias in Security Decisions</h3>
+
+<p>If personas exhibit bias (e.g., flagging certain languages or cultural contexts as "suspicious"), this perpetuates discrimination.</p>
+
+<p><strong>Mitigation:</strong> Regular bias audits. Diverse red teams. Explicit fairness criteria in constitutional principles.</p>
+
+<h2>11. Conclusion</h2>
+
+<p>A2AS emerged in September 2025 establishing security vocabulary for single-context inference—structured primitives like <code>&lt;a2as:defense&gt;</code> and <code>&lt;a2as:policy&gt;</code> that declare boundaries within the context window. This addresses deployment reality: many applications will use single-context approaches for economic, operational, or latency reasons regardless of whether multi-layered architectures exist.</p>
+
+<p>Yet A2AS, as initially conceived, leaves enforcement implicit. Models receive security primitives and must adhere through unstructured awareness. Reflexive-Core explores the immediate next question: can these primitives be actively operationalized through the cybersecurity expertise frontier models already possess?</p>
+
+<p>This work investigates structured metacognitive reasoning as an enforcement layer for A2AS. Rather than passive markup, specialized personas—Preflight Analyst, Security Analyst, Controlled Executor, Compliance Validator—actively reason about threats, policies, and risks. The hypothesis: if single-context security is happening anyway, explicit checkpoints and fail-closed defaults may leverage models' trained capabilities more effectively than hoping for implicit compliance.</p>
+
+<p>Convergent research suggests promise. Ackerman (2025) demonstrates emerging metacognition in frontier models. Wang et al. (2023) shows cognitive synergy through multi-persona reasoning. Constitutional AI establishes principle-based self-reflection at runtime. Token analysis indicates &lt;1.01× overhead at production scale. These developments suggest structured enforcement within single-context windows may be both technically feasible and economically viable.</p>
+
+<p>Multi-layered architectures remain essential for high-security applications. Reflexive-Core explores the first layer of governance: improving A2AS concept single-context inference runtime security- either as the first layer of a multi-layer security topology, or when external validation is cost-prohibitive or operationally impractical. As A2AS primitives and metacognitive capabilities both mature, sub-persona informed checkpoint-based enforcement may scale with improving model introspection.</p>
+
+<p>The convergence of A2AS (providing security vocabulary) and emerging metacognitive capabilities (enabling structured self-governance) opens new architectural possibilities. Reflexive-Core investigates whether single-context security can evolve beyond passive markup—actively leveraging the expertise frontier models inherently possess rather than relying solely on implicit constraint awareness.</p>
+
+<h2 class="references">References</h2>
+
+<div class="references">
+<ol>
+    <li>Ackerman, C. (2025). Evidence for Limited Metacognition in LLMs. <em>arXiv preprint arXiv:2509.21545</em>. <a href="https://arxiv.org/abs/2509.21545">https://arxiv.org/abs/2509.21545</a></li>
+    
+    <li>Posta, C. (2024). How to Mitigate Prompt Injection Attacks with A2AS and agentgateway. <em>LinkedIn Article</em>. <a href="https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/">https://www.linkedin.com/pulse/mitigate-prompt-injection-attacks-a2as-agentgateway-christian-posta-tmaxc/</a></li>
+  
+    <li>Anthropic (Docs). <em>Use XML tags to structure your prompts.</em> <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags">https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags</a></li>
+
+    <li>OpenAI (Docs). <em>Prompt engineering – OpenAI API.</em> (Includes example using Markdown and XML tags.) <a href="https://platform.openai.com/docs/guides/prompt-engineering">https://platform.openai.com/docs/guides/prompt-engineering</a></li>
+    
+    <li>Google Cloud (Vertex AI Docs). <em>Structure prompts.</em> (“Use prefixes or XML tags to delimit different parts of a prompt.”) <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/prompts/structure-prompts">https://cloud.google.com/vertex-ai/generative-ai/docs/learn/prompts/structure-prompts</a></li>
+    
+    <li>Microsoft (Azure OpenAI, Learn). <em>Prompt engineering techniques.</em> (“If you're not sure what syntax to use, consider... XML.”) <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/prompt-engineering">https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/prompt-engineering</a></li>
+    
+    <li>Alpay, F.; Alpay, T. (2025). <em>XML Prompting as Grammar-Constrained Interaction: Fixed-Point Semantics, Convergence Guarantees, and Human-AI Protocols.</em> arXiv. <a href="https://arxiv.org/abs/2509.08182">https://arxiv.org/abs/2509.08182</a></li>
+  
+    <li>A2AS Working Group (2025). Agent-to-Agent Security Framework. <a href="https://www.a2as.org/">https://www.a2as.org/</a></li>
+    
+    <li>Bai, Y., Kadavath, S., Kundu, S., et al. (2022). Constitutional AI: Harmlessness from AI Feedback. <em>arXiv preprint arXiv:2212.08073</em>. <a href="https://arxiv.org/abs/2212.08073">https://arxiv.org/abs/2212.08073</a></li>
+    
+    <li>Wang, Z., Mao, S., Wu, W., Ge, T., Wei, F., & Ji, H. (2023). Unleashing the Emergent Cognitive Synergy in Large Language Models: A Task-Solving Agent through Multi-Persona Self-Collaboration. <em>arXiv preprint arXiv:2307.05300</em>. <a href="https://arxiv.org/abs/2307.05300">https://arxiv.org/abs/2307.05300</a></li>
+    
+    <li>Shinn, N., Labash, B., & Gopinath, A. (2023). Reflexion: Language Agents with Verbal Reinforcement Learning. <em>arXiv preprint arXiv:2303.11366</em>. <a href="https://arxiv.org/abs/2303.11366">https://arxiv.org/abs/2303.11366</a></li>
+    
+    <li>Madaan, A., et al. (2023). Self-Refine: Iterative Refinement with Self-Feedback. <em>arXiv preprint arXiv:2303.17651</em>. <a href="https://arxiv.org/abs/2303.17651">https://arxiv.org/abs/2303.17651</a></li>
+    
+    <li>Dhuliawala, S., et al. (2023). Chain-of-Verification Reduces Hallucination in Large Language Models. <em>arXiv preprint arXiv:2309.11495</em>. <a href="https://arxiv.org/abs/2309.11495">https://arxiv.org/abs/2309.11495</a></li>
+    
+    <li>Fleuren, J.W. (2025, August 28). Constitutional AI: A Novel Approach to Intrinsic Safety in Agentic Models. <em>Hugging Face Community Blog</em>. <a href="https://huggingface.co/blog/KingOfThoughtFleuren/constitutional-ai">https://huggingface.co/blog/KingOfThoughtFleuren/constitutional-ai</a></li>
+    
+    <li>Anthropic (2025, September 29). Introducing Claude Sonnet 4.5. <a href="https://www.anthropic.com/news/claude-sonnet-4-5">https://www.anthropic.com/news/claude-sonnet-4-5</a></li>
+    
+    <li>xAI (2025, July 10). Grok 4. <a href="https://x.ai/news/grok-4">https://x.ai/news/grok-4</a></li>
+    
+    <li>Guo, Y., et al. (2024). Attention Tracker: Detecting Prompt Injection via Attention Distraction. <em>arXiv preprint arXiv:2411.00348</em>.</li>
+</ol>
+</div>
+
+<hr>
+
+<h2>Appendix A: Repo &amp; XML Specification</h2>
+
+<p>Draft Concept reflexive-core.xml specification</p>
+
+<p>Available at: <a href="https://github.com/alexlstanton/a2as-reflexive/tree/main" target="_blank">https://github.com/alexlstanton/a2as-reflexive</a>
+
+<hr>
+
+<h2>Appendix B: Token Overhead Calculations</h2>
+
+<p>[Detailed breakdown of token measurements across scenarios]</p>
+
+<hr>
+
+<h2>Appendix C: Example Outputs</h2>
+
+<p>[Annotated examples showing persona reasoning on various inputs]</p>
+
+<hr>
+
+<div class="author-info" style="margin-top: 3em;">
+    <p><strong>Contact:</strong> <a href="mailto:alex@thinkpurple.io">alex@thinkpurple.io</a></p>
+    <p><strong>GitHub:</strong><a href="https://github.com/alexlstanton" target="_blank">https://github.com/alexlstanton</a></p>
+    <p><strong>LinkedIn:</strong><a href="https://linkedin.com/in/alexlstanton" target="_blank">https://linkedin.com/in/alexlstanton</a></p>
+    <p><strong>License:</strong> Apache 2.0</p>
+</div>
+
+</body>
+</html>

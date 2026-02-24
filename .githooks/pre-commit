@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# Pre-commit hook: Prevent API keys and secrets from being committed.
+#
+# Install:
+#   git config core.hooksPath .githooks
+#
+# This runs on every commit and blocks if it finds patterns that look
+# like API keys in staged files. No external dependencies required.
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Patterns that should NEVER appear in committed code
+PATTERNS=(
+    'sk-ant-'           # Anthropic API keys
+    'sk-proj-'          # OpenAI API keys
+    'sk-or-'            # OpenRouter keys
+    'AIza[A-Za-z0-9]'   # Google API keys
+    'AKIA[A-Z0-9]'      # AWS access keys
+    'ghp_[A-Za-z0-9]'   # GitHub personal tokens
+    'gho_[A-Za-z0-9]'   # GitHub OAuth tokens
+    'glpat-'            # GitLab tokens
+)
+
+FOUND=0
+
+for pattern in "${PATTERNS[@]}"; do
+    # Check only staged files (what's about to be committed)
+    MATCHES=$(git diff --cached --diff-filter=ACM -G "$pattern" --name-only 2>/dev/null)
+
+    if [ -n "$MATCHES" ]; then
+        # Verify it's not in .env.example (which has placeholder text)
+        for file in $MATCHES; do
+            if [[ "$file" == *.example ]] || [[ "$file" == *.md ]]; then
+                continue
+            fi
+
+            # Double-check the actual staged content
+            if git show ":$file" 2>/dev/null | grep -qE "$pattern"; then
+                echo -e "${RED}BLOCKED:${NC} Potential API key found in ${YELLOW}$file${NC}"
+                echo -e "  Pattern: $pattern"
+                echo ""
+                FOUND=1
+            fi
+        done
+    fi
+done
+
+if [ $FOUND -ne 0 ]; then
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${RED}  COMMIT BLOCKED: Possible API keys detected!${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo "  If this is a false positive, you can bypass with:"
+    echo "    git commit --no-verify"
+    echo ""
+    echo "  But please double-check first!"
+    exit 1
+fi
+
+exit 0
