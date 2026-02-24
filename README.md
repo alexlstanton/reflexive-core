@@ -4,7 +4,7 @@
 
 Reflexive-Core is a structured in-context security architecture that transforms how LLMs reason about threats. Instead of relying on passive safety markup that models may inconsistently follow, it partitions inference into four specialized sub-personas — Preflight Analyst, Security Analyst, Controlled Executor, and Compliance Validator — each with explicit checkpoints, fail-closed defaults, and constitutional principles. All within a single context window. No external dependencies.
 
-**Website:** [alexlstanton.github.io/reflexive-core](https://alexlstanton.github.io/reflexive-core/) | **Paper:** [Read online](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.html) &#183; [PDF](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.pdf)
+**Website:** [alexlstanton.github.io/reflexive-core](https://alexlstanton.github.io/reflexive-core/) | **Paper:** [Read online](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.html) &#183; [PDF](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.pdf) | **DOI:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18763904.svg)](https://doi.org/10.5281/zenodo.18763904)
 
 ---
 
