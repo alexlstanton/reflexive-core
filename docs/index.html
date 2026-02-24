@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflexive-Core — Single-Context Metacognitive Security for Agentic LLMs</title>
+    <meta name="description" content="An empirically validated security framework that teaches LLMs to reason about threats from inside a single context window. Built on LLM metacognition research, Solo Performance Prompting, and Constitutional AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a1a1a;
+            --secondary: #4a4a4a;
+            --muted: #6b7280;
+            --accent: #d97706;
+            --accent-light: #fef3c7;
+            --accent-hover: #b45309;
+            --surface: #fafafa;
+            --border: #e5e5e5;
+            --white: #ffffff;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --mono: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            color: var(--primary);
+            background: var(--white);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+            border-radius: 100px;
+            padding: 0.35em 1.2em;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.2rem;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero-sub {
+            font-size: 1.15rem;
+            line-height: 1.65;
+            color: var(--secondary);
+            max-width: 660px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 500;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.75em 1.8em;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--white);
+            border: 2px solid var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── Section layout ── */
+        section {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        section + section {
+            border-top: 1px solid var(--border);
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+        }
+
+        section h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        section p {
+            font-size: 1rem;
+            line-height: 1.75;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        /* ── Concept ── */
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 540px) {
+            .concept-grid { grid-template-columns: 1fr; }
+        }
+
+        .concept-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .concept-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .concept-card p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .concept-card .card-icon {
+            font-size: 1.4rem;
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        /* ── XML Preview ── */
+        .xml-preview {
+            background: #1e1e2e;
+            border-radius: 10px;
+            padding: 1.8rem 2rem;
+            margin-top: 2rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .xml-preview-label {
+            position: absolute;
+            top: 0.8rem;
+            right: 1rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-family: var(--mono);
+        }
+
+        .xml-preview pre {
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            line-height: 1.7;
+            color: #cdd6f4;
+            margin: 0;
+            white-space: pre;
+        }
+
+        .xml-preview .xml-tag { color: #89b4fa; }
+        .xml-preview .xml-attr { color: #f9e2af; }
+        .xml-preview .xml-comment { color: #6c7086; font-style: italic; }
+        .xml-preview .xml-string { color: #a6e3a1; }
+        .xml-preview .xml-text { color: #cdd6f4; }
+        .xml-preview .xml-keyword { color: #f38ba8; }
+
+        /* ── Research foundations ── */
+        .foundations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .foundation-item {
+            padding: 1.2rem;
+            border-left: 3px solid var(--accent);
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .foundation-item h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .foundation-item .cite {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        .foundation-item p {
+            font-size: 0.82rem;
+            line-height: 1.55;
+            margin-bottom: 0;
+        }
+
+        /* ── Research cards ── */
+        .research-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .research-links { grid-template-columns: 1fr; }
+        }
+
+        .research-card {
+            display: block;
+            padding: 1.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .research-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px rgba(217, 119, 6, 0.08);
+        }
+
+        .research-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .research-card p {
+            font-size: 0.85rem;
+            line-height: 1.55;
+            margin-bottom: 0;
+        }
+
+        .research-card .card-type {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .pdf-link:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Callout ── */
+        .callout {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 10px 10px 0;
+            padding: 1.8rem 2rem;
+            margin-top: 2rem;
+        }
+
+        .callout h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .callout p {
+            margin-bottom: 0.6rem;
+        }
+
+        .callout a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .callout a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Bio ── */
+        .bio-section {
+            margin-top: 1.5rem;
+        }
+
+        .bio-text p {
+            margin-bottom: 0.8rem;
+        }
+
+        .bio-roles {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .bio-role {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .bio-role .role-org {
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .bio-role .role-title {
+            color: var(--muted);
+        }
+
+        .bio-role .role-sep {
+            color: var(--border);
+        }
+
+        /* ── Engage ── */
+        .engage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .engage-card {
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .engage-card:hover {
+            border-color: var(--accent);
+        }
+
+        .engage-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .engage-card p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        /* ── Footer ── */
+        footer {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        footer p {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        footer a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        footer a:hover {
+            color: var(--accent);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            width: 48px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+            margin: 1rem 0 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════ HERO ════════════════════════════ -->
+<div class="hero">
+    <div class="hero-badge">Open Research &middot; Apache 2.0</div>
+    <h1>Reflexive<span>-</span>Core</h1>
+    <p class="hero-sub">
+        A metacognitive security architecture — grounded in LLM reasoning research — that teaches
+        models to detect and refuse prompt injection attacks from inside a single context window.
+        Not another prompt template. A structured cognitive framework with empirical validation.
+    </p>
+    <div class="hero-stats">
+        <div class="stat">
+            <div class="stat-value">97%</div>
+            <div class="stat-label">Attack Detection</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">0%</div>
+            <div class="stat-label">Data Leakage</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">~$0.01</div>
+            <div class="stat-label">Per Evaluation</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">28</div>
+            <div class="stat-label">Attack Cases Tested</div>
+        </div>
+    </div>
+    <div class="hero-actions">
+        <a href="paper/v2-february-2026/reflexive_core_publication_v2.html" target="_blank" class="btn btn-primary">Read the Paper</a>
+        <a href="https://github.com/alexlstanton/reflexive-core" target="_blank" class="btn btn-secondary">View on GitHub</a>
+    </div>
+</div>
+
+<!-- ════════════════════════════ THE PROBLEM ════════════════════════════ -->
+<section>
+    <div class="section-label">The Problem</div>
+    <h2>Model-native safety fails at the point of attack</h2>
+    <div class="divider"></div>
+    <p>
+        We tested four frontier Claude models against 28 attack cases spanning 13 categories — social engineering,
+        prompt injection, data exfiltration, multi-turn persistence, and more. Without any framework,
+        model-native safety training permits <strong>data leakage in 58% of attack cases</strong>.
+    </p>
+    <p>
+        The dominant failure mode is what we call "comply-then-warn" — the model begins fulfilling
+        a malicious request before catching itself. By then, sensitive data is already in the response.
+        Safety training teaches models to <em>feel bad</em> about leaking data. It doesn't teach them
+        to <em>not do it in the first place</em>.
+    </p>
+    <p>
+        <strong>Here's what makes this frustrating:</strong> these same models possess <strong>expert-level
+        cybersecurity knowledge</strong>. They can identify attack patterns, reason about data boundaries,
+        explain injection techniques in detail, and advise on defense-in-depth architecture. The expertise
+        is already inside the model — it's just not being applied when the model is actually <em>doing work</em>.
+        The model that can teach you about prompt injection is the same model that falls for it.
+    </p>
+    <div class="callout">
+        <p style="margin-bottom: 0;">
+            <strong>Reflexive-Core starts from that observation.</strong> Security can't be a suggestion
+            appended to a prompt — it has to be a <em>cognitive architecture</em> that activates the model's
+            own security reasoning as a structured part of every inference.
+        </p>
+    </div>
+</section>
+
+<!-- ════════════════════════════ FOUNDATIONS ════════════════════════════ -->
+<section>
+    <div class="section-label">Theoretical Foundations</div>
+    <h2>Built on three lines of active AI research</h2>
+    <div class="divider"></div>
+    <p>
+        Reflexive-Core isn't a prompt engineering trick. It's a structured application of three
+        converging research programs that, together, suggest a fundamentally different approach
+        to in-context security.
+    </p>
+    <div class="foundations">
+        <div class="foundation-item">
+            <span class="cite">Ackerman, 2025</span>
+            <h4>LLM Metacognition</h4>
+            <p>Frontier models show partial but measurable metacognitive capabilities
+            (r=0.2&ndash;0.3 confidence&ndash;behavior correlations). Reflexive-Core provides
+            explicit structures that harvest these limited capabilities and fail safely when they're absent.</p>
+        </div>
+        <div class="foundation-item">
+            <span class="cite">Wang et al., 2023</span>
+            <h4>Solo Performance Prompting</h4>
+            <p>A single LLM adopting multiple specialized personas achieves +7&ndash;18% accuracy
+            gains on reasoning tasks. Reflexive-Core applies this cognitive synergy specifically
+            to security reasoning through four adversarial sub-personas.</p>
+        </div>
+        <div class="foundation-item">
+            <span class="cite">Bai et al., 2022</span>
+            <h4>Constitutional AI</h4>
+            <p>Models can self-critique against written principles. Each Reflexive-Core persona
+            applies constitutional principles — authenticity, least privilege, transparency,
+            privacy — from its specialized perspective.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════ THE APPROACH ════════════════════════════ -->
+<section>
+    <div class="section-label">The Architecture</div>
+    <h2>Four sub-personas, one context window, zero external dependencies</h2>
+    <div class="divider"></div>
+    <p>
+        Reflexive-Core partitions LLM inference into four specialized sub-personas — each with distinct
+        cognitive stances, explicit checkpoints, and constitutional principles. Every request passes through
+        a strictly ordered evaluation pipeline. Missing or malformed checkpoints default to BLOCKED.
+        The entire framework runs inside one context window.
+    </p>
+    <div class="concept-grid">
+        <div class="concept-card">
+            <span class="card-icon">&#9670;</span>
+            <h3>Preflight Analyst</h3>
+            <p>Cognitive stance: <strong>adversarial</strong>. Assumes malice. Classifies intent and detects attack patterns before any processing begins.</p>
+        </div>
+        <div class="concept-card">
+            <span class="card-icon">&#9670;</span>
+            <h3>Security Analyst</h3>
+            <p>Cognitive stance: <strong>paranoid</strong>. Over-classifies sensitivity. Maps data boundaries and evaluates information flow against policy.</p>
+        </div>
+        <div class="concept-card">
+            <span class="card-icon">&#9670;</span>
+            <h3>Controlled Executor</h3>
+            <p>Cognitive stance: <strong>service-oriented but constrained</strong>. Generates the response within enforced guardrails and least-privilege principles.</p>
+        </div>
+        <div class="concept-card">
+            <span class="card-icon">&#9670;</span>
+            <h3>Compliance Validator</h3>
+            <p>Cognitive stance: <strong>skeptical</strong>. Audits everything. Reviews output against constitutional principles, assigns confidence, issues the final decision.</p>
+        </div>
+    </div>
+
+    <!-- XML Preview -->
+    <div class="xml-preview">
+        <span class="xml-preview-label">reflexive-core-prod.xml (excerpt)</span>
+<pre>
+<span class="xml-tag">&lt;SystemIdentity&gt;</span>
+  <span class="xml-tag">&lt;role&gt;</span><span class="xml-text">Security-aware executive assistant</span><span class="xml-tag">&lt;/role&gt;</span>
+  <span class="xml-tag">&lt;scope&gt;</span><span class="xml-text">Read-only analysis: reviewing and summarizing email content</span><span class="xml-tag">&lt;/scope&gt;</span>
+  <span class="xml-tag">&lt;operational_mode&gt;</span><span class="xml-text">Informational only - no modifications, executions, or transmissions</span><span class="xml-tag">&lt;/operational_mode&gt;</span>
+
+  <span class="xml-tag">&lt;personas&gt;</span>
+    <span class="xml-text">Each persona reasons INDEPENDENTLY using their domain expertise:</span>
+    <span class="xml-text">- Preflight Analyst  </span><span class="xml-keyword">&#8594;</span><span class="xml-text"> ADVERSARIAL </span><span class="xml-comment">(assume malice, detect threats)</span>
+    <span class="xml-text">- Security Analyst   </span><span class="xml-keyword">&#8594;</span><span class="xml-text"> PARANOID </span><span class="xml-comment">(over-classify sensitivity, protect data)</span>
+    <span class="xml-text">- Controlled Executor</span><span class="xml-keyword">&#8594;</span><span class="xml-text"> SERVICE-ORIENTED </span><span class="xml-comment">(helpful but constrained)</span>
+    <span class="xml-text">- Compliance Validator</span><span class="xml-keyword">&#8594;</span><span class="xml-text"> SKEPTICAL </span><span class="xml-comment">(audit everything, verify alignment)</span>
+  <span class="xml-tag">&lt;/personas&gt;</span>
+
+  <span class="xml-tag">&lt;allowed_actions&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-string">read</span><span class="xml-tag">&lt;/action&gt;</span>        <span class="xml-comment">&lt;!-- View and analyze content --&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-string">summarize</span><span class="xml-tag">&lt;/action&gt;</span>   <span class="xml-comment">&lt;!-- Condense and explain information --&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-string">filter</span><span class="xml-tag">&lt;/action&gt;</span>      <span class="xml-comment">&lt;!-- Select or sort content --&gt;</span>
+  <span class="xml-tag">&lt;/allowed_actions&gt;</span>
+
+  <span class="xml-tag">&lt;forbidden_actions&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-keyword">generate</span><span class="xml-tag">&lt;/action&gt;</span>    <span class="xml-comment">&lt;!-- Create new code, scripts, or executable content --&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-keyword">modify</span><span class="xml-tag">&lt;/action&gt;</span>      <span class="xml-comment">&lt;!-- Change existing code, data, or configurations --&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-keyword">execute</span><span class="xml-tag">&lt;/action&gt;</span>     <span class="xml-comment">&lt;!-- Run commands or perform system operations --&gt;</span>
+    <span class="xml-tag">&lt;action&gt;</span><span class="xml-keyword">transmit</span><span class="xml-tag">&lt;/action&gt;</span>    <span class="xml-comment">&lt;!-- Send, forward, or share data externally --&gt;</span>
+  <span class="xml-tag">&lt;/forbidden_actions&gt;</span>
+<span class="xml-tag">&lt;/SystemIdentity&gt;</span>
+</pre>
+    </div>
+    <p style="font-size: 0.82rem; color: var(--muted); margin-top: 0.8rem;">
+        The full production framework is ~200 lines of structured XML that transforms passive markup
+        into cognitive architecture. <a href="https://github.com/alexlstanton/reflexive-core/blob/main/framework/reflexive-core-prod.xml" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">View the complete framework on GitHub &rarr;</a>
+    </p>
+</section>
+
+<!-- ════════════════════════════ RESEARCH ════════════════════════════ -->
+<section>
+    <div class="section-label">Research</div>
+    <h2>Read the work</h2>
+    <div class="divider"></div>
+    <p>
+        The v2 paper presents full methodology and empirical results across four Claude model variants
+        on a 28-case test suite spanning 13 attack categories. All data, test cases, and evaluation
+        code are open source and reproducible. The supplement contains per-case decision matrices,
+        baseline behavioral taxonomy, raw token economics, and parser recovery analysis.
+    </p>
+    <div class="research-links">
+        <div>
+            <a href="paper/v2-february-2026/reflexive_core_publication_v2.html" target="_blank" class="research-card">
+                <span class="card-type">Whitepaper &middot; v2</span>
+                <h3>Reflexive-Core: Single-Context Metacognitive Security for Agentic LLMs</h3>
+                <p>Full paper — architecture, theoretical grounding, methodology, 4-model results, and analysis. February 2026.</p>
+            </a>
+            <a href="paper/v2-february-2026/reflexive_core_publication_v2.pdf" target="_blank" class="pdf-link">&#8595; Download PDF</a>
+        </div>
+        <div>
+            <a href="paper/v2-february-2026/test_results_supplement.html" target="_blank" class="research-card">
+                <span class="card-type">Supplement</span>
+                <h3>Test Results Supplement</h3>
+                <p>Per-case results across all 4 models, baseline behavioral taxonomy, token economics, and parser recovery data.</p>
+            </a>
+            <a href="paper/v2-february-2026/test_results_supplement.pdf" target="_blank" class="pdf-link">&#8595; Download PDF</a>
+        </div>
+    </div>
+
+    <!-- AgentGateway callout -->
+    <div class="callout">
+        <h3>In production: pair the cognitive layer with a deterministic one</h3>
+        <p>
+            Reflexive-Core operates inside the LLM's reasoning — it's the cognitive security layer.
+            For production deployments, pairing it with a deterministic intermediary like
+            <a href="https://agentgateway.dev" target="_blank">AgentGateway</a> (Linux Foundation) adds
+            enforceable policy, authentication, observability, and audit capabilities around agent-to-agent
+            and agent-to-tool communication. Reflexive-Core doesn't require it — but the combination is
+            where single-context security meets infrastructure-grade governance. The paper covers this
+            architecture in Section 10.
+        </p>
+    </div>
+</section>
+
+<!-- ════════════════════════════ ABOUT ════════════════════════════ -->
+<section>
+    <div class="section-label">Researcher</div>
+    <h2>About the author</h2>
+    <div class="divider"></div>
+    <div class="bio-section">
+        <div class="bio-text">
+            <p>
+                <strong>Alex Stanton</strong> has been building and securing technology infrastructure for
+                over two decades. He founded his first company — <a href="https://exbabylon.com" target="_blank"
+                style="color: var(--accent); text-decoration: none; font-weight: 600;">Exbabylon</a>,
+                a managed IT and cybersecurity firm — at 14. That company grew into a regional MSP/MSSP
+                platform serving government, aerospace, healthcare, and manufacturing clients, earning
+                back-to-back Inc. 5000 recognition. He went on to serve as CTO/CIO of a PE-backed
+                platform spanning 25 operating companies, 1,200 employees, and $250M in revenue —
+                leading cybersecurity architecture, cloud transformation, and digital strategy
+                across the portfolio.
+            </p>
+            <p>
+                Today, through <a href="https://thinkpurple.io" target="_blank" style="color: var(--accent);
+                text-decoration: none; font-weight: 600;">ThinkPurple</a>, Alex advises PE/VC-backed portfolio
+                companies and enterprise leadership on technology transformation, cybersecurity posture,
+                and agentic AI strategy. Reflexive-Core emerged from direct experience deploying
+                LLM-powered agents into production environments where the security model hadn't kept
+                up with the capabilities — and the conviction that the solution had to be grounded in
+                real research, not prompt engineering folklore.
+            </p>
+            <p>
+                <strong>Beyond ThinkPurple</strong>, Alex contributes to the broader AI and industrial
+                automation ecosystem. As Director of Enterprise Partnerships at the
+                <a href="https://agenticnet.org" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">Foundation for Agentic Networks</a>
+                — the organizational home of
+                <a href="https://projnanda.github.io/projnanda/" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">Project NANDA</a>,
+                an MIT Media Lab initiative building decentralized infrastructure for an "Internet of AI Agents" —
+                he bridges open protocol research and production adoption across industry.
+                He also chairs the advisory board at the University of Idaho's
+                <a href="https://www.uidaho.edu/engineering/research/intelligent-industrial-robotics" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">Center for Intelligent Industrial Robotics</a>,
+                connecting AI, robotics, and automation research with the manufacturing partners who deploy it.
+            </p>
+            <div class="bio-roles">
+                <div class="bio-role">
+                    <span class="role-org"><a href="https://thinkpurple.io" target="_blank" style="color: var(--primary); text-decoration: none;">ThinkPurple</a></span>
+                    <span class="role-sep">&mdash;</span>
+                    <span class="role-title">Founder</span>
+                </div>
+                <div class="bio-role">
+                    <span class="role-org"><a href="https://agenticnet.org" target="_blank" style="color: var(--primary); text-decoration: none;">Foundation for Agentic Networks / Project NANDA</a></span>
+                    <span class="role-sep">&mdash;</span>
+                    <span class="role-title">Director, Enterprise Partnerships</span>
+                </div>
+                <div class="bio-role">
+                    <span class="role-org"><a href="https://www.uidaho.edu/engineering/research/intelligent-industrial-robotics" target="_blank" style="color: var(--primary); text-decoration: none;">Center for Intelligent Industrial Robotics (CIIR)</a></span>
+                    <span class="role-sep">&mdash;</span>
+                    <span class="role-title">Chair &middot; University of Idaho</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════ ENGAGE ════════════════════════════ -->
+<section>
+    <div class="section-label">Get Involved</div>
+    <h2>This is open research. Build with us.</h2>
+    <div class="divider"></div>
+    <p>
+        Reflexive-Core is Apache 2.0 licensed. The framework, test suite, evaluation tooling, and all
+        raw results are public. If you're working on agentic security, prompt injection defense, or
+        LLM reasoning architectures — there's real work to do here and plenty of room to contribute.
+    </p>
+    <div class="engage-grid">
+        <a href="https://github.com/alexlstanton/reflexive-core" target="_blank" class="engage-card">
+            <h3>Contribute</h3>
+            <p>Fork the repo. Run the test suite against new models and model families. Submit new attack cases. Open issues.</p>
+        </a>
+        <a href="https://linkedin.com/in/alexlstanton" target="_blank" class="engage-card">
+            <h3>Connect</h3>
+            <p>Follow the research on LinkedIn. Share your results. Help build the community around single-context security.</p>
+        </a>
+        <a href="mailto:security@thinkpurple.io" class="engage-card">
+            <h3>Collaborate</h3>
+            <p>Working on adjacent research? Building agentic security infrastructure? Let's talk.</p>
+        </a>
+    </div>
+</section>
+
+<!-- ════════════════════════════ FOOTER ════════════════════════════ -->
+<footer>
+    <p>&copy; 2026 Alex Stanton. Code: Apache 2.0 &middot; Paper: CC BY 4.0</p>
+    <div class="footer-links">
+        <a href="https://github.com/alexlstanton/reflexive-core" target="_blank">GitHub</a>
+        <a href="https://linkedin.com/in/alexlstanton" target="_blank">LinkedIn</a>
+        <a href="https://thinkpurple.io" target="_blank">ThinkPurple</a>
+        <a href="mailto:security@thinkpurple.io">Contact</a>
+    </div>
+</footer>
+
+</body>
+</html>

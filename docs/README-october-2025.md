@@ -274,7 +274,7 @@ Some interesting research directions:
 
 ## License
 
-Dual-licensed: Apache 2.0 or MIT (your choice)
+Licensed under Apache 2.0 (code) and CC BY 4.0 (paper)
 
 ---
 

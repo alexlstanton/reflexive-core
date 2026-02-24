@@ -4,7 +4,7 @@
 
 Reflexive-Core is a structured in-context security architecture that transforms how LLMs reason about threats. Instead of relying on passive safety markup that models may inconsistently follow, it partitions inference into four specialized sub-personas — Preflight Analyst, Security Analyst, Controlled Executor, and Compliance Validator — each with explicit checkpoints, fail-closed defaults, and constitutional principles. All within a single context window. No external dependencies.
 
-**Paper:** [Reflexive-Core: Single-Context Metacognitive Security for Agentic LLMs](docs/paper/v2-february-2026/reflexive_core_publication_v2.html) (v2, February 2026)
+**Website:** [alexlstanton.github.io/reflexive-core](https://alexlstanton.github.io/reflexive-core/) | **Paper:** [Read online](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.html) &#183; [PDF](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.pdf)
 
 ---
 
@@ -23,7 +23,7 @@ Evaluated across 4 Claude model variants on a 28-case test suite spanning 13 att
 
 With prompt caching, per-evaluation cost is approximately **$0.01 at the Sonnet tier**.
 
-Full results: [Test Results Supplement](docs/paper/v2-february-2026/test_results_supplement.html)
+Full results: [Test Results Supplement](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/test_results_supplement.html) &#183; [PDF](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/test_results_supplement.pdf)
 
 ---
 
@@ -128,10 +128,13 @@ reflexive-core/
 │   ├── sweep_sonnet45_baseline_v1.1.json
 │   └── february-2026-v1.0/             # Archived v1.0 results
 ├── docs/
+│   ├── index.html                          # Project website (GitHub Pages)
 │   └── paper/
 │       ├── v2-february-2026/
 │       │   ├── reflexive_core_publication_v2.html
-│       │   └── test_results_supplement.html
+│       │   ├── reflexive_core_publication_v2.pdf
+│       │   ├── test_results_supplement.html
+│       │   └── test_results_supplement.pdf
 │       └── v1-october-2025/            # Archived v1 paper
 ├── examples/
 │   └── enterprise_wrapper.py           # Example integration
@@ -182,7 +185,7 @@ The framework is compatible with — but does not require — deterministic inte
 - **4 benign cases** is insufficient for production false-positive rate claims
 - **Single-context architecture** has inherent limits against determined adversaries
 
-See the [paper](docs/paper/v2-february-2026/reflexive_core_publication_v2.html) Section 7.3.6 for full limitations discussion.
+See the [paper](https://alexlstanton.github.io/reflexive-core/paper/v2-february-2026/reflexive_core_publication_v2.html) Section 7.3.6 for full limitations discussion.
 
 ---
 
@@ -202,6 +205,5 @@ The single-context security problem was first articulated by the [A2AS](https://
 ## Contact
 
 - **Author:** Alex Stanton
-- **Email:** [alex@thinkpurple.io](mailto:alex@thinkpurple.io)
+- **Email:** [security@thinkpurple.io](mailto:security@thinkpurple.io)
 - **LinkedIn:** [alexlstanton](https://linkedin.com/in/alexlstanton)
-- **Security issues:** [security@thinkpurple.io](mailto:security@thinkpurple.io)

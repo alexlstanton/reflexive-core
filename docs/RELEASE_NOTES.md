@@ -240,7 +240,7 @@ If multi-persona metacognitive security works, this could be a significant advan
 
 ## License
 
-Dual-licensed: Apache 2.0 or MIT (your choice)
+Licensed under Apache 2.0 (code) and CC BY 4.0 (paper)
 
 ---
 

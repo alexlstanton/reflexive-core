@@ -6,7 +6,7 @@
   within a single LLM context. It is a conceptual reference implementation designed
   for experimentation with metacognitive and self-verifying agent behavior by leveraging sub-persona methods.
   Author: Alex Stanton (ThinkPurple)
-  License: Apache 2.0 / MIT
+  License: Apache 2.0
 -->
 
 <!-- ================================================================ -->
