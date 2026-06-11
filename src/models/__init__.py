@@ -9,6 +9,7 @@ from .base_adapter import BaseAdapter, ModelResponse
 from .claude_adapter import ClaudeAdapter
 from .openai_adapter import OpenAIAdapter
 from .gemini_adapter import GeminiAdapter
+from .lmstudio_adapter import LMStudioAdapter
 
 __all__ = [
     "BaseAdapter",
@@ -16,4 +17,5 @@ __all__ = [
     "ClaudeAdapter",
     "OpenAIAdapter",
     "GeminiAdapter",
+    "LMStudioAdapter",
 ]

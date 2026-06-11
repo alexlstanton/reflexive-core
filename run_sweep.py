@@ -46,7 +46,7 @@ from rich.progress import (
 from rich.table import Table
 
 from analyzers import XMLParser, ConfidenceValidator
-from models import ClaudeAdapter
+from models import ClaudeAdapter, LMStudioAdapter
 
 
 # ─────────────────────────────────────────────────────
@@ -55,6 +55,7 @@ from models import ClaudeAdapter
 
 CLAUDE_MODELS = {
     "sonnet45": {
+        "provider": "anthropic",
         "model_id": "claude-sonnet-4-5-20250929",
         "display_name": "Sonnet 4.5",
         "generation": "4.5",
@@ -65,6 +66,7 @@ CLAUDE_MODELS = {
         "cost_per_mtok_cache_read": 0.30,
     },
     "opus45": {
+        "provider": "anthropic",
         "model_id": "claude-opus-4-5-20251101",
         "display_name": "Opus 4.5",
         "generation": "4.5",
@@ -75,6 +77,7 @@ CLAUDE_MODELS = {
         "cost_per_mtok_cache_read": 1.50,
     },
     "sonnet46": {
+        "provider": "anthropic",
         "model_id": "claude-sonnet-4-6",
         "display_name": "Sonnet 4.6",
         "generation": "4.6",
@@ -85,6 +88,7 @@ CLAUDE_MODELS = {
         "cost_per_mtok_cache_read": 0.30,
     },
     "opus46": {
+        "provider": "anthropic",
         "model_id": "claude-opus-4-6",
         "display_name": "Opus 4.6",
         "generation": "4.6",
@@ -95,6 +99,18 @@ CLAUDE_MODELS = {
         "cost_per_mtok_cache_read": 0.50,
     },
 }
+
+# Local LM Studio targets — registry lives in config/local_models.py so
+# both this runner and the GARAK wrapper (separate venv) can import it
+# without dragging in stack-specific deps.
+sys.path.insert(0, str(Path(__file__).parent))
+from config.local_models import LOCAL_MODELS  # noqa: E402
+
+MODEL_REGISTRY: dict[str, dict[str, Any]] = {**CLAUDE_MODELS, **LOCAL_MODELS}
+
+
+def _provider_keys(provider: str) -> list[str]:
+    return [k for k, v in MODEL_REGISTRY.items() if v["provider"] == provider]
 
 
 # ─────────────────────────────────────────────────────
@@ -253,22 +269,53 @@ class SweepRunner:
         task_id: Any = None,
     ) -> ModelSweepResult:
         """Run all test cases against a single model."""
-        model_info = CLAUDE_MODELS[model_key]
+        model_info = MODEL_REGISTRY[model_key]
         model_id = model_info["model_id"]
         model_name = model_info["display_name"]
+        provider = model_info["provider"]
 
         self.console.print(f"\n[bold cyan]{'━' * 60}[/bold cyan]")
-        self.console.print(f"[bold cyan]  Model: {model_name} ({model_id})[/bold cyan]")
+        self.console.print(f"[bold cyan]  Model: {model_name} ({model_id}) [{provider}][/bold cyan]")
         self.console.print(f"[bold cyan]{'━' * 60}[/bold cyan]")
 
-        adapter = ClaudeAdapter(
-            api_key=self.api_key,
-            model=model_id,
-            max_tokens=4096,
-            temperature=0.7,
-            timeout=120,
-            enable_cache=not self.baseline,  # No caching in baseline mode
-        )
+        if provider == "anthropic":
+            adapter = ClaudeAdapter(
+                api_key=self.api_key,
+                model=model_id,
+                max_tokens=4096,
+                temperature=0.7,
+                timeout=120,
+                enable_cache=not self.baseline,  # No caching in baseline mode
+            )
+        elif provider == "lmstudio":
+            adapter = LMStudioAdapter(
+                model=model_id,
+                max_tokens=4096,
+                temperature=0.7,
+                timeout=300,
+            )
+        else:
+            raise ValueError(f"Unsupported provider: {provider}")
+
+        # Cache warm-up: only meaningful for lmstudio + framework-on. LM Studio
+        # (llama.cpp) auto-caches the KV state for identical prompt prefixes,
+        # so paying the ~22s prefill cost once here keeps the first measured
+        # case from absorbing it. Anthropic has its own cache_control path
+        # and pays nothing meaningful for a warmup, so we skip there.
+        if provider == "lmstudio" and not self.baseline:
+            warm_start = time.perf_counter()
+            try:
+                await adapter.generate(
+                    prompt="Reply OK.",
+                    system_prompt=self.system_prompt,
+                )
+                warm_ms = (time.perf_counter() - warm_start) * 1000
+                self.console.print(
+                    f"  [dim]🔥 KV-cache warmed ({warm_ms:.0f}ms prefill, "
+                    f"~{self.framework_token_estimate} tokens)[/dim]"
+                )
+            except Exception as e:
+                self.console.print(f"  [yellow]⚠ warm-up failed: {e}; continuing cold[/yellow]")
 
         case_results: list[CaseResult] = []
         sweep_start = time.perf_counter()
@@ -354,10 +401,12 @@ class SweepRunner:
                     else:
                         passed = decision_correct and confidence_met
 
-                # Extract token info
+                # Extract token info — Anthropic uses input/output_tokens,
+                # LM Studio (OpenAI shape) uses prompt/completion_tokens. No
+                # cache fields from local models.
                 meta = response.metadata or {}
-                input_tokens = meta.get("input_tokens", 0) or 0
-                output_tokens = meta.get("output_tokens", 0) or 0
+                input_tokens = meta.get("input_tokens") or meta.get("prompt_tokens", 0) or 0
+                output_tokens = meta.get("output_tokens") or meta.get("completion_tokens", 0) or 0
                 cache_creation = meta.get("cache_creation_input_tokens", 0) or 0
                 cache_read = meta.get("cache_read_input_tokens", 0) or 0
                 cache_status = meta.get("cache_status", "none")
@@ -489,7 +538,7 @@ class SweepRunner:
         total_cache_write = sum(r.cache_creation_tokens for r in case_results)
 
         # Cost calculation
-        model_info = CLAUDE_MODELS[model_key]
+        model_info = MODEL_REGISTRY[model_key]
         cost_input = (total_input / 1_000_000) * model_info["cost_per_mtok_input"]
         cost_output = (total_output / 1_000_000) * model_info["cost_per_mtok_output"]
         cost_cache_write = (total_cache_write / 1_000_000) * model_info["cost_per_mtok_cache_write"]
@@ -579,7 +628,7 @@ class SweepRunner:
             f"Mode: {mode_str}\n"
             f"Framework: {self.framework_path if not self.baseline else 'N/A (baseline)'}\n"
             f"Test cases: {len(self.test_cases)} (v{self.test_version})\n"
-            f"Models: {', '.join(CLAUDE_MODELS[k]['display_name'] for k in model_keys)}\n"
+            f"Models: {', '.join(MODEL_REGISTRY[k]['display_name'] for k in model_keys)}\n"
             f"Total API calls: {len(self.test_cases) * len(model_keys)}",
             style="blue",
         ))
@@ -600,7 +649,7 @@ class SweepRunner:
         report = SweepReport(
             framework=self.framework_path,
             framework_token_count=self.framework_token_estimate,
-            models_tested=[CLAUDE_MODELS[k]["model_id"] for k in model_keys],
+            models_tested=[MODEL_REGISTRY[k]["model_id"] for k in model_keys],
             sweep_start=sweep_start.isoformat(),
             sweep_end=sweep_end.isoformat(),
             total_api_calls=total_calls,
@@ -704,6 +753,87 @@ class SweepRunner:
         self.console.print(f"\n[green]Report saved: {output_path}[/green]")
         return output_path
 
+    def save_experiment_runs(
+        self,
+        report: SweepReport,
+        model_keys: list[str],
+    ) -> list[str]:
+        """Write one experiment-layout cell per (model, framework_state) combo.
+
+        Returns the list of per-model run directories. This is the durable,
+        provenance-rich storage for the 4-cell matrix; save_report() above
+        keeps writing its flat sweep file for backward compatibility.
+        """
+        from scripts.experiment_manifest import (
+            FrameworkInfo, ModelInfo, ModelSettings, RunManifest, SuiteInfo,
+            cell_name, make_run_id, run_dir, sha256_of_file, write_manifest,
+        )
+
+        repo_root = Path(__file__).parent
+        framework_enabled = not self.baseline
+        framework_sha = sha256_of_file(self.framework_path) if framework_enabled else None
+        run_id = make_run_id()
+        started = report.sweep_start
+        ended = report.sweep_end
+
+        out_dirs: list[str] = []
+        # Walk the per-model results so each lands in its own cell.
+        for mr in report.model_results:
+            # Find the matching model_key for this model_id
+            mk = next(
+                (k for k in model_keys if MODEL_REGISTRY[k]["model_id"] == mr.model_id),
+                None,
+            )
+            if mk is None:
+                continue
+            cell = cell_name("rc", framework_enabled)
+            rdir = run_dir(repo_root, mk, cell, run_id)
+            rdir.mkdir(parents=True, exist_ok=True)
+
+            # Write sweep.json (single-model view)
+            mr_dict = asdict(mr)
+            for cr in mr_dict["case_results"]:
+                if len(cr["raw_response"]) > 5000:
+                    cr["raw_response"] = cr["raw_response"][:5000] + "... [truncated]"
+            with (rdir / "sweep.json").open("w") as f:
+                json.dump(mr_dict, f, indent=2)
+
+            manifest = RunManifest(
+                run_id=run_id,
+                schema_version=1,
+                started_at=started,
+                ended_at=ended,
+                model=ModelInfo(
+                    short_name=mk,
+                    model_id=mr.model_id,
+                    provider=MODEL_REGISTRY[mk]["provider"],
+                ),
+                framework=FrameworkInfo(
+                    enabled=framework_enabled,
+                    framework_path=self.framework_path if framework_enabled else None,
+                    framework_sha256=framework_sha,
+                    framework_token_estimate=self.framework_token_estimate,
+                ),
+                suite=SuiteInfo(
+                    kind="rc",
+                    rc_test_cases_path=self.test_cases_path,
+                    rc_test_cases_version=self.test_version,
+                    rc_total_cases=len(self.test_cases),
+                    rc_strict_mode=self.strict,
+                ),
+                settings=ModelSettings(
+                    temperature=0.7,
+                    max_tokens=4096,
+                    timeout=120,
+                ),
+                notes={"sweep_duration_s": mr.sweep_duration_s},
+                outputs={"sweep": "sweep.json"},
+            )
+            write_manifest(rdir, manifest)
+            out_dirs.append(str(rdir))
+            self.console.print(f"[green]Experiment run saved: {rdir}[/green]")
+        return out_dirs
+
 
 # ─────────────────────────────────────────────────────
 # Main
@@ -714,11 +844,17 @@ async def main() -> int:
         description="Run Reflexive-Core multi-model sweep"
     )
     parser.add_argument(
+        "--provider",
+        choices=["anthropic", "lmstudio"],
+        default="anthropic",
+        help="Which model family to sweep (default: anthropic). Use lmstudio for local /v1/chat/completions targets.",
+    )
+    parser.add_argument(
         "--models",
         nargs="+",
-        choices=list(CLAUDE_MODELS.keys()) + ["all"],
+        choices=list(MODEL_REGISTRY.keys()) + ["all"],
         default=["all"],
-        help="Models to test (default: all)",
+        help="Models to test (default: all-of-provider)",
     )
     parser.add_argument(
         "--debug",
@@ -728,8 +864,8 @@ async def main() -> int:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="data/results",
-        help="Output directory for results",
+        default=None,
+        help="Output directory for results (default: data/results for anthropic, data/results/local for lmstudio)",
     )
     parser.add_argument(
         "--dry-run",
@@ -752,11 +888,22 @@ async def main() -> int:
 
     console = Console()
 
-    # Determine models
+    # Resolve default output dir per provider
+    if args.output_dir is None:
+        args.output_dir = "data/results" if args.provider == "anthropic" else "data/results/local"
+
+    # Determine models — "all" means all-of-current-provider; explicit names
+    # must belong to the selected provider.
+    provider_keys = _provider_keys(args.provider)
     if "all" in args.models:
-        model_keys = list(CLAUDE_MODELS.keys())
+        model_keys = provider_keys
     else:
         model_keys = args.models
+        mismatched = [k for k in model_keys if MODEL_REGISTRY[k]["provider"] != args.provider]
+        if mismatched:
+            console.print(f"[red]Error: models {mismatched} don't belong to provider '{args.provider}'.[/red]")
+            console.print(f"Available for {args.provider}: {provider_keys}")
+            return 1
 
     # Determine framework
     framework = (
@@ -777,22 +924,27 @@ async def main() -> int:
             f"[bold]DRY RUN — Sweep Configuration[/bold]\n\n"
             f"Mode: {dry_mode}\n"
             f"Framework: {framework if not args.baseline else 'N/A (baseline)'}\n"
-            f"Models: {', '.join(CLAUDE_MODELS[k]['display_name'] for k in model_keys)}\n"
+            f"Provider: {args.provider}\n"
+            f"Models: {', '.join(MODEL_REGISTRY[k]['display_name'] for k in model_keys)}\n"
             f"Test cases: {tc_count} (v{tc_version})\n"
             f"Output: {args.output_dir}/\n\n"
             f"Estimated API calls: {tc_count * len(model_keys)}\n"
             f"Model IDs:\n" +
-            "\n".join(f"  - {CLAUDE_MODELS[k]['model_id']}" for k in model_keys),
+            "\n".join(f"  - {MODEL_REGISTRY[k]['model_id']}" for k in model_keys),
             style="yellow",
         ))
         return 0
 
     # Check API key (after dry-run so dry-run works without key)
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        console.print("[red]Error: ANTHROPIC_API_KEY not found in .env[/red]")
-        console.print("Copy .env.example to .env and add your API key.")
-        return 1
+    if args.provider == "anthropic":
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            console.print("[red]Error: ANTHROPIC_API_KEY not found in .env[/red]")
+            console.print("Copy .env.example to .env and add your API key.")
+            return 1
+    else:
+        # LM Studio doesn't require a real key — adapter uses a placeholder.
+        api_key = "lm-studio"
 
     # Mode label for display
     mode_label = "BASELINE (no framework)" if args.baseline else ("STRICT" if args.strict else "standard")
@@ -810,11 +962,19 @@ async def main() -> int:
     report = await runner.run_sweep(model_keys)
     output_path = runner.save_report(report, args.output_dir)
 
+    # Also persist per-model runs into the experiments layout for the
+    # 4-cell matrix. Anthropic sweeps keep the legacy single-file path only.
+    experiment_dirs: list[str] = []
+    if args.provider == "lmstudio":
+        experiment_dirs = runner.save_experiment_runs(report, model_keys)
+
     # Final summary
     console.print(f"\n[bold green]Sweep complete! ({mode_label})[/bold green]")
     console.print(f"Total API calls: {report.total_api_calls}")
     console.print(f"Total cost: ${report.total_cost_usd:.4f}")
     console.print(f"Results: {output_path}")
+    for ed in experiment_dirs:
+        console.print(f"Experiment cell: {ed}")
 
     return 0
 
