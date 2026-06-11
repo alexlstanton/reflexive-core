@@ -99,3 +99,43 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Local-pilot infrastructure (added during GARAK/AgentGateway integration)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# GARAK isolated venv (1.4 GB, reproducible via `python3 -m venv garak/.venv && pip install garak`)
+garak/.venv/
+
+# AgentGateway binary (downloaded via curl install, regenerable, ~60 MB)
+gateway/agentgateway
+gateway/.venv/
+
+# Generated AG config (built from build_config.py; checked in template is the source of truth)
+gateway/config.yaml
+
+# Per-run runtime configs (rebuilt on every run)
+gateway/configs/.runtime/
+garak/configs/.runtime/
+
+# Operational logs (regenerated on each run)
+gateway/logs/*.jsonl
+gateway/logs/*.html
+
+# GARAK report HTML files (large, regenerable from .jsonl)
+*.report.html
+
+# Local model registry — checked in version is canonical
+# Per-run experiment outputs are NOT tracked (regenerable, large, model-specific)
+data/experiments/*/
+!data/experiments/.gitkeep
+
+# Comparison reports — regenerated from experiment data
+data/results/comparison/
+data/results/local/
+
+# Throwaway / temporary scratch files used during dev
+/tmp/*.py
+
+# Legacy garak/reports/ path (now using data/experiments/)
+garak/reports/

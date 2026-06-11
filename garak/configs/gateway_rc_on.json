@@ -1,0 +1,45 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "rc-on-framework",
+      "uri": "http://127.0.0.1:1235/v1/chat/completions",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer lm-studio"
+      },
+      "req_template_json_object": {
+        "model": "$MODEL",
+        "messages": [
+          {"role": "user", "content": "$INPUT"}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "ReflexiveCoreDecision",
+            "strict": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "persona":    {"type": "string"},
+                "phase":      {"type": "string", "enum": ["preflight", "prescan", "execution", "assurance"]},
+                "decision":   {"type": "string", "enum": ["APPROVED", "BLOCKED", "REVIEW_REQUIRED"]},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "threats":    {"type": "array"},
+                "output":     {"type": "string"}
+              },
+              "required": ["persona", "phase", "decision", "confidence", "output"]
+            }
+          }
+        }
+      },
+      "response_json": true,
+      "response_json_field": "$.choices[0].message.content",
+      "request_timeout": 600,
+      "ratelimit_codes": [429],
+      "skip_codes": []
+    }
+  }
+}
