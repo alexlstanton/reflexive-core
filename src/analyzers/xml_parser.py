@@ -35,7 +35,7 @@ class ReflexiveCoreResponse:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_valid(self) -> bool:
-        """Check if response has minimum required fields for A2AS."""
+        """Check if response has minimum required fields for Reflexive-Core."""
         # New format requires: persona, phase, decision, confidence
         # Allow legacy validation for backward compatibility
         has_new_fields = (
@@ -115,10 +115,10 @@ class XMLParser:
 
     def parse_response(self, text: str) -> ReflexiveCoreResponse:
         """
-        Parse Reflexive-Core A2AS response (JSON or legacy XML format).
+        Parse Reflexive-Core Reflexive-Core response (JSON or legacy XML format).
 
         Args:
-            text: Text containing A2AS response (JSON or XML)
+            text: Text containing Reflexive-Core response (JSON or XML)
 
         Returns:
             ReflexiveCoreResponse object with extracted data
@@ -183,14 +183,14 @@ class XMLParser:
                 pass
 
         # Determine active persona based on which phases executed
-        # Supports both legacy <a2as:> and current <rc:> tag prefixes
-        if "<rc:preflight>" in text or "<a2as:preflight>" in text:
+        # Detect framework phase from <rc:*> tag prefix
+        if "<rc:preflight>" in text:
             response.persona = "Preflight Analyst"
-        elif "<rc:pre_scan>" in text or "<a2as:pre_scan>" in text:
+        elif "<rc:pre_scan>" in text:
             response.persona = "Security Analyst"
-        elif "<rc:execution>" in text or "<a2as:execution>" in text:
+        elif "<rc:execution>" in text:
             response.persona = "Controlled Executor"
-        elif "<rc:assurance>" in text or "<a2as:assurance>" in text:
+        elif "<rc:assurance>" in text:
             response.persona = "Compliance Validator"
 
         # Extract decision from checkpoint or final
@@ -342,7 +342,7 @@ class XMLParser:
 
     def _parse_json_response(self, data: dict[str, Any], raw_text: str) -> ReflexiveCoreResponse:
         """
-        Parse JSON-formatted A2AS response (new output_format).
+        Parse JSON-formatted Reflexive-Core response (new output_format).
 
         New format structure:
         {
@@ -422,7 +422,7 @@ class XMLParser:
         response: ReflexiveCoreResponse,
     ) -> tuple[bool, list[str]]:
         """
-        Validate A2AS response structure (new format).
+        Validate Reflexive-Core response structure (new format).
 
         New format requires:
         - persona: Decision-maker persona
