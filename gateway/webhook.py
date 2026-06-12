@@ -41,7 +41,13 @@ REPO_ROOT = HERE.parent
 LOG_DIR = HERE / "logs"
 DECISION_LOG = LOG_DIR / "decisions.jsonl"
 REQUEST_LOG = LOG_DIR / "requests.jsonl"
-FRAMEWORK_PATH = REPO_ROOT / "framework" / "reflexive-core-prod.xml"
+# Hybrid (split) framework — RC core is agent-agnostic, identity is per-agent.
+RC_CORE_PATH = REPO_ROOT / "framework" / "rc-core.xml"
+IDENTITIES_DIR = REPO_ROOT / "framework" / "identities"
+# Monolithic — canonical reference for non-AG testing (RC 28-case sweep).
+MONOLITHIC_PATH = REPO_ROOT / "framework" / "reflexive-core-prod.xml"
+DEFAULT_AGENT_IDENTITY = "email-assistant"
+AGENT_IDENTITY_HEADER = "X-Agent-Identity"
 
 MIN_CONFIDENCE_DEFAULT = 0.85
 
@@ -310,10 +316,14 @@ async def handle_request(request: web.Request) -> web.Response:
     actually expects:
 
       [
-        {role: system,  content: <framework XML>},
+        {role: system,  content: <agent-identity XML> + <rc-core XML>},
         {role: user,    content: "<rc:tool:NONCE>...untrusted system data...</rc:tool:NONCE>
                                   <rc:user:NONCE>...user attack...</rc:user:NONCE>"}
       ]
+
+    The system message is composed at request time from two layers:
+      - Agent identity (per-route or per-tenant, selected by X-Agent-Identity)
+      - RC core (agent-agnostic defensive scaffold)
 
     The nonce is per-request, cryptographically random, so embedded
     `</rc:user:>` or `</rc:tool:>` strings in attacker content cannot
@@ -324,7 +334,22 @@ async def handle_request(request: web.Request) -> web.Response:
     untrusted") has no syntactic anchor to operate on. With the wrap, the
     framework's reasoning has the structure it was designed for.
     """
-    framework_xml = request.app["framework_xml"]
+    rc_core_xml = request.app["rc_core_xml"]
+    identities = request.app["identities"]
+    requested_identity = request.headers.get(AGENT_IDENTITY_HEADER, DEFAULT_AGENT_IDENTITY)
+    if requested_identity not in identities:
+        # Unknown identity → fail closed at the request layer. Log and reject.
+        return web.json_response({
+            "action": {
+                "body": "Unknown agent identity requested.",
+                "status_code": 400,
+                "reason": f"unknown_identity:{requested_identity}",
+            }
+        })
+    agent_identity_xml = identities[requested_identity]
+    # Compose: identity first (sets role/scope), then RC core (defensive scaffold).
+    # This mirrors the monolithic XML's ordering and preserves framework reasoning.
+    framework_xml = agent_identity_xml + "\n\n" + rc_core_xml
     payload = await request.json()
     incoming = payload.get("body", {}).get("messages", []) or []
 
@@ -370,6 +395,7 @@ async def handle_request(request: web.Request) -> web.Response:
         "request_id": request_id,
         "ts": ts,
         "nonce": nonce,
+        "agent_identity": requested_identity,
         "incoming_roles": [m.get("role") for m in incoming],
         "incoming_total_chars": sum(len(m.get("content") or "") for m in incoming),
         "wrapped_user_content_chars": len(wrapped_user_content),
@@ -389,20 +415,55 @@ async def handle_request(request: web.Request) -> web.Response:
     })
 
 
-async def handle_health(_request: web.Request) -> web.Response:
-    return web.json_response({"ok": True, "log": str(DECISION_LOG)})
+async def handle_health(request: web.Request) -> web.Response:
+    return web.json_response({
+        "ok": True,
+        "log": str(DECISION_LOG),
+        "rc_core_sha256": request.app.get("rc_core_sha256"),
+        "identities": list(request.app.get("identities", {}).keys()),
+        "default_identity": DEFAULT_AGENT_IDENTITY,
+    })
+
+
+def _load_identities() -> dict[str, str]:
+    """Discover and load all available agent identities from framework/identities/.
+
+    Returns a dict mapping identity name (filename stem) to its XML content.
+    """
+    identities: dict[str, str] = {}
+    if IDENTITIES_DIR.is_dir():
+        for f in sorted(IDENTITIES_DIR.glob("*.xml")):
+            identities[f.stem] = f.read_text(encoding="utf-8")
+    return identities
 
 
 def make_app(min_confidence: float) -> web.Application:
     app = web.Application()
     app["min_confidence"] = min_confidence
-    # Load the RC framework XML once at startup. The request-side webhook
-    # injects this verbatim as the system message after wrapping incoming
-    # content. The framework_sha256 is logged with each decision so any
-    # drift in the framework file is detectable post-hoc.
-    framework_xml = FRAMEWORK_PATH.read_text(encoding="utf-8")
-    app["framework_xml"] = framework_xml
-    app["framework_sha256"] = hashlib.sha256(framework_xml.encode("utf-8")).hexdigest()
+    # Hybrid load: RC core (defensive scaffold, agent-agnostic) + identity
+    # registry (one XML file per available agent). The request webhook
+    # composes `identity_xml + rc_core_xml` at request time based on the
+    # X-Agent-Identity header. SHAs of every loaded file are logged so any
+    # drift is detectable post-hoc.
+    rc_core_xml = RC_CORE_PATH.read_text(encoding="utf-8")
+    identities = _load_identities()
+    if not identities:
+        raise RuntimeError(
+            f"No agent identity files found under {IDENTITIES_DIR}. "
+            f"At least the default '{DEFAULT_AGENT_IDENTITY}' identity must exist."
+        )
+    if DEFAULT_AGENT_IDENTITY not in identities:
+        raise RuntimeError(
+            f"Default identity '{DEFAULT_AGENT_IDENTITY}' not found in {IDENTITIES_DIR}. "
+            f"Available: {sorted(identities.keys())}"
+        )
+    app["rc_core_xml"] = rc_core_xml
+    app["rc_core_sha256"] = hashlib.sha256(rc_core_xml.encode("utf-8")).hexdigest()
+    app["identities"] = identities
+    app["identity_sha256"] = {
+        name: hashlib.sha256(xml.encode("utf-8")).hexdigest()
+        for name, xml in identities.items()
+    }
     app.add_routes([
         web.post("/response", handle_response),
         web.post("/request", handle_request),

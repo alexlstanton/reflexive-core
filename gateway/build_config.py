@@ -75,10 +75,27 @@ binds:
                     - webhook:
                         target:
                           host: "{WEBHOOK_TARGET}"
+                        forwardHeaderMatches:
+                          - name: x-agent-identity
+                            value:
+                              regex: ".*"
+                          - name: x-tenant-id
+                            value:
+                              regex: ".*"
+                          - name: x-rc-min-confidence
+                            value:
+                              regex: ".*"
                   response:
                     - webhook:
                         target:
                           host: "{WEBHOOK_TARGET}"
+                        forwardHeaderMatches:
+                          - name: x-agent-identity
+                            value:
+                              regex: ".*"
+                          - name: x-tenant-id
+                            value:
+                              regex: ".*"
 
   # ─────────── RC OFF: pure passthrough to LM Studio ───────────
   - port: {PORT_RC_OFF}
