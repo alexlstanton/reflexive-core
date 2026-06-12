@@ -336,7 +336,11 @@ async def handle_request(request: web.Request) -> web.Response:
     """
     rc_core_xml = request.app["rc_core_xml"]
     identities = request.app["identities"]
-    requested_identity = request.headers.get(AGENT_IDENTITY_HEADER, DEFAULT_AGENT_IDENTITY)
+    # Normalise the header — case-insensitive (aiohttp does this for us), but
+    # also strip whitespace and lowercase the value so trailing spaces or
+    # mixed-case identity names don't trip a spurious unknown-identity reject.
+    raw_identity = request.headers.get(AGENT_IDENTITY_HEADER, DEFAULT_AGENT_IDENTITY)
+    requested_identity = (raw_identity or DEFAULT_AGENT_IDENTITY).strip().lower()
     if requested_identity not in identities:
         # Unknown identity → fail closed at the request layer. Log and reject.
         return web.json_response({
